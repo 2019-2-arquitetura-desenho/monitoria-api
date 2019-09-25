@@ -9,8 +9,12 @@ Inicializar serviço do docker:
 
 Caso não dê certo, use:
 
-    sudo dockerd
+    make start-docker2
 
 Inicializar Aplicação:
 
     make server
+
+Para inicializar o bash do container, após subir o container:
+
+    make bash
