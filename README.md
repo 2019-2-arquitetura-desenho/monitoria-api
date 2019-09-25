@@ -18,3 +18,9 @@ Inicializar Aplicação:
 Para inicializar o bash do container, após subir o container:
 
     make bash
+
+Para rodar as migrations:
+
+    make bash
+    python3 manage.py makemigrations
+    python3 manage.py migrate
