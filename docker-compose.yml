@@ -1,0 +1,14 @@
+version: '3'
+services:
+  monitoria-db:
+    image: postgres:11.5-alpine
+  monitoria-api:
+    build: .
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    container_name: monitoria-api
+    depends_on:
+      - monitoria-db
