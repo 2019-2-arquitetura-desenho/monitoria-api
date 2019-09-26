@@ -26,7 +26,7 @@ def create_profile(request):
     name = request.data.get('name')
     ira = request.data.get('ira')
     if not name or not matricula or not ira or not jwt_token:
-            return Response(data={'erro':'Um ou mais campos vazios'}, status=HTTP_404_NOT_FOUND)    
+            return Response(data={'erro':'Um ou mais campos vazios'}, status=HTTP_400_BAD_REQUEST)    
     client = Client()
     response = client.post('/token_verify/', request.data)
     if response.status_code<200 or response.status_code>=300:
@@ -37,16 +37,16 @@ def create_profile(request):
     try:
         student = Student.objects.get(user=user)
         print(student.matricula)
-        return Response(data={'error':'Já existe perfil para esse usuário'}, status=HTTP_404_NOT_FOUND)
+        return Response(data={'error':'Já existe perfil para esse usuário'}, status=HTTP_400_BAD_REQUEST)
     except Student.DoesNotExist:
         try:
             validate_ira(ira)
         except:
-            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_404_NOT_FOUND)
+            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_400_BAD_REQUEST)
         try:
             validate_mat(matricula)
         except:
-            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_404_NOT_FOUND)
+            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_400_BAD_REQUEST)
         student = Student(user=user, name=name, matricula=matricula, ira=ira)
         student.save()
     serializer = StudentSerializer(student)
@@ -69,19 +69,19 @@ def set_profile(request):
     try:
         student = Student.objects.get(user=user)
     except Student.DoesNotExist:
-        return Response(data={'error':'Não existe perfil para esse usuário'}, status=HTTP_404_NOT_FOUND)
+        return Response(data={'error':'Não existe perfil para esse usuário'}, status=HTTP_400_BAD_REQUEST)
     if ira:
         try:
             validate_ira(ira)
             student.ira=ira
         except:
-            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_404_NOT_FOUND)
+            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_400_BAD_REQUEST)
     if matricula:
         try:
             validate_mat(matricula)
             student.matricula=matricula
         except:
-            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_404_NOT_FOUND)
+            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_400_BAD_REQUEST)
     if name:
         student.name = name
     student.save()
