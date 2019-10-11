@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_403_FORBIDDEN,
     HTTP_200_OK,
+    HTTP_201_CREATED,
     HTTP_404_NOT_FOUND,
     HTTP_400_BAD_REQUEST,
 )
@@ -20,37 +21,25 @@ from profiles.validators import validate_ira
 from profiles.validators import validate_mat
 
 @api_view(["POST"])
-def create_profile(request):
+def get_profile(request):
     jwt_token = request.data.get('token')
-    matricula = request.data.get('matricula')
-    name = request.data.get('name')
-    ira = request.data.get('ira')
-    if not name or not matricula or not ira or not jwt_token:
-            return Response(data={'erro':'Um ou mais campos vazios'}, status=HTTP_400_BAD_REQUEST)    
+
+    #Validação do token
     client = Client()
     response = client.post('/token_verify/', request.data)
-    if response.status_code<200 or response.status_code>=300:
-        return Response(data={'error': 'Token invalido'} ,status=HTTP_403_FORBIDDEN)
-    
+    if response.status_code!=HTTP_200_OK:
+        return response
+    # Decodificação do usuário
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
+
     try:
         student = Student.objects.get(user=user)
-        print(student.matricula)
-        return Response(data={'error':'Já existe perfil para esse usuário'}, status=HTTP_400_BAD_REQUEST)
     except Student.DoesNotExist:
-        try:
-            validate_ira(ira)
-        except:
-            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_400_BAD_REQUEST)
-        try:
-            validate_mat(matricula)
-        except:
-            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_400_BAD_REQUEST)
-        student = Student(user=user, name=name, matricula=matricula, ira=ira)
+        student = Student(user=user)
         student.save()
-    serializer = StudentSerializer(student)
 
+    serializer = StudentSerializer(student)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
@@ -59,34 +48,66 @@ def set_profile(request):
     matricula = request.data.get('matricula')
     name = request.data.get('name')
     ira = request.data.get('ira')
+
+    #Validação do token
     client = Client()
     response = client.post('/token_verify/', request.data)
-    if response.status_code<200 or response.status_code>=300:
-        return Response(data={'error': 'Token invalido'} ,status=HTTP_403_FORBIDDEN)
-    
+    if response.status_code!=HTTP_200_OK:
+        return response
+    # Decodificação do usuário
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
+
     try:
         student = Student.objects.get(user=user)
     except Student.DoesNotExist:
-        return Response(data={'error':'Não existe perfil para esse usuário'}, status=HTTP_400_BAD_REQUEST)
+        student = Student(user=user)
+        student.save()
+
     if ira:
         try:
             validate_ira(ira)
             student.ira=ira
-        except:
+        except ValidationError:
             return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_400_BAD_REQUEST)
+
     if matricula:
         try:
             validate_mat(matricula)
             student.matricula=matricula
-        except:
+        except ValidationError:
             return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_400_BAD_REQUEST)
+
     if name:
         student.name = name
     student.save()
     serializer = StudentSerializer(student)
     return Response(data=serializer.data, status=HTTP_200_OK)
+
+@api_view(["POST"])
+def registration(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+    name = request.data.get('name')
+    user_data = {
+        'email': email,
+        'password1':password,
+        'password2':password,
+    }
+    client = Client()
+    response = client.post('/rest_registration/', user_data)
+    if response.status_code!=HTTP_201_CREATED:
+        return response
+    jwt_token = response.data['token']
+    print(jwt_token)
+    profile_data = {
+        'token':jwt_token,
+        'name':name    
+    }
+    response = client.post('/set_profile/', profile_data)
+    return response
+    
+
         
    
         

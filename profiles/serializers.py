@@ -4,7 +4,8 @@ from rest_framework import serializers
 class UserSerializer(serializers.Serializer):
     pk = serializers.ReadOnlyField()
     email = serializers.EmailField()
-
+    is_superuser = serializers.BooleanField()
+    
 class StudentSerializer(serializers.Serializer):
     pk = serializers.ReadOnlyField()
     user = UserSerializer()

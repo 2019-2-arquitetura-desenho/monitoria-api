@@ -1,0 +1,16 @@
+{ 
+    "create_profile": {
+        "correct":[
+            {
+                "name":"Alfa Tester Beta", 
+                "matricula": "123456789", 
+                "ira": "4.99"
+            },
+            {}
+        ],
+        "wrong":[
+            {},
+            {}
+        ]
+    }
+}
