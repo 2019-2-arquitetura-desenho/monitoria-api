@@ -10,8 +10,8 @@ from rest_framework.status import (
 )
 from django.contrib.auth.models import User
 from profiles.serializers import UserSerializer
-from profiles.models import Student
-from profiles.serializers import StudentSerializer
+from profiles.models import Profile
+from profiles.serializers import ProfileSerializer
 import jwt
 import requests
 from monitoria.settings import SECRET_KEY
@@ -19,6 +19,7 @@ from rest_framework_jwt.views import verify_jwt_token
 from django.test.client import Client
 from profiles.validators import validate_ira
 from profiles.validators import validate_mat
+from django.core.exceptions import ValidationError
 
 @api_view(["POST"])
 def get_profile(request):
@@ -34,20 +35,18 @@ def get_profile(request):
     user = User.objects.get(pk=user_obj['user_id'])
 
     try:
-        student = Student.objects.get(user=user)
-    except Student.DoesNotExist:
-        student = Student(user=user)
-        student.save()
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        profile = Profile(user=user)
+        profile.save()
 
-    serializer = StudentSerializer(student)
+    serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
 def set_profile(request):
     jwt_token = request.data.get('token')
-    matricula = request.data.get('matricula')
     name = request.data.get('name')
-    ira = request.data.get('ira')
 
     #Validação do token
     client = Client()
@@ -58,30 +57,16 @@ def set_profile(request):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
+    # Obtendo profile
     try:
-        student = Student.objects.get(user=user)
-    except Student.DoesNotExist:
-        student = Student(user=user)
-        student.save()
-
-    if ira:
-        try:
-            validate_ira(ira)
-            student.ira=ira
-        except ValidationError:
-            return Response(data={'error':'Valor inválido para o ira'}, status=HTTP_400_BAD_REQUEST)
-
-    if matricula:
-        try:
-            validate_mat(matricula)
-            student.matricula=matricula
-        except ValidationError:
-            return Response(data={'error':'Valor inválido para a matrícula'}, status=HTTP_400_BAD_REQUEST)
-
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        profile = Profile(user=user)
+        profile.save()
     if name:
-        student.name = name
-    student.save()
-    serializer = StudentSerializer(student)
+        profile.name = name
+    profile.save()
+    serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
@@ -89,6 +74,8 @@ def registration(request):
     email = request.data.get('email')
     password = request.data.get('password')
     name = request.data.get('name')
+    email = email if email != None else ''
+    password = password if password != None else ''
     user_data = {
         'email': email,
         'password1':password,
@@ -99,13 +86,12 @@ def registration(request):
     if response.status_code!=HTTP_201_CREATED:
         return response
     jwt_token = response.data['token']
-    print(jwt_token)
     profile_data = {
         'token':jwt_token,
         'name':name    
     }
     response = client.post('/set_profile/', profile_data)
-    return response
+    return Response(data={'token':jwt_token, 'profile':response.data}, status=HTTP_201_CREATED)
     
 
         
