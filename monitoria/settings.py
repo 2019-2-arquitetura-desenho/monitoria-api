@@ -25,13 +25,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    #Auth
+    # Auth
     'rest_framework',
     'rest_framework.authtoken',
     'rest_auth',
     'rest_auth.registration',
     'allauth',
     'allauth.account',
+    # Apps
+    'profiles'
 ]
 SITE_ID = 1
 
@@ -88,7 +90,7 @@ JWT_AUTH = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        #'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
@@ -165,7 +167,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-BR'
 
 TIME_ZONE = 'UTC'
 

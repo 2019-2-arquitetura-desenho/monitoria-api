@@ -1,12 +1,13 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls import url
-from django.contrib.auth import views as auth_views
+# from django.contrib.auth import views as auth_views
 from django.contrib.sites.models import Site
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('monitoria.auth_urls')),
+    path('', include('monitoria.auth_urls')),
+    path('', include('profiles.urls')),
     url('^', include('django.contrib.auth.urls')),
 ]
 
