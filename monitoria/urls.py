@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls import url
-from django.contrib.auth import views as auth_views
+# from django.contrib.auth import views as auth_views
 from django.contrib.sites.models import Site
 
 urlpatterns = [

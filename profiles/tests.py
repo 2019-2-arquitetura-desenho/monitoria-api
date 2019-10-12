@@ -9,7 +9,8 @@ from rest_framework.status import *
 class CheckProfilesAPITest(APITestCase):
     # Test create Student with all parameteres correct
     def test_create_profile_success(self):
-        response = create_profile(email='teste2@testando.com', password='th1s1s4h4rdp455w0rd', name='Alpha Test')
+        response = create_profile(email='teste2@testando.com',
+                                        password='th1s1s4h4rdp455w0rd', name='Alpha Test')
         self.assertEqual(response.status_code, HTTP_201_CREATED)
 
     # Test create Student with wrong 'token'
@@ -17,7 +18,7 @@ class CheckProfilesAPITest(APITestCase):
         response = create_profile(email='teste2.', password='th1s1s4h4rdp455w0rd', name='Alpha Test')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-     # Test create Student with missing parameteres 
+    # Test create Student with missing parameteres
     def test_create_profile_with_missing_parameteres(self):
         # without email
         response = create_profile(password='th1s1s4h4rdp455w0rd', name='Alpha Test')
@@ -42,8 +43,8 @@ class CheckProfilesAPITest(APITestCase):
     def test_edit_profile_invalid_token(self):
         response = edit_profile(token='invalid_token')
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
-    
-    #Test get_profile
+
+    # Test get_profile
     def test_get_profile_success(self):
         response = create_profile(email='teste5@testando.com', password='th1s1s4h4rdp455w0rd')
         jwt_token = response.data['token']
@@ -52,26 +53,30 @@ class CheckProfilesAPITest(APITestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(response.data, profile)
 
+
 def create_profile(email='', password='', name=''):
     client = Client()
     data = {
-        'email':email,
-        'password':password,
-        'name':name
+        'email': email,
+        'password': password,
+        'name': name
     }
     response = client.post('/registration/', data)
     return response
 
+
 def edit_profile(token='', name=''):
     client = Client()
     data = {
-        'token':token,
-        'name':name
+        'token': token,
+        'name': name
     }
     response = client.post('/set_profile/', data)
     return response
+
+
 def get_profile(token=''):
     client = Client()
-    data = {'token':token}
+    data = {'token': token}
     response = client.post('/get_profile/', data)
     return response
