@@ -7,4 +7,3 @@ class Profile(models.Model):
     name = models.CharField(max_length=50, default='')
     matricula = models.CharField(max_length=9, blank=True, null=True)
     ira = models.FloatField(blank=True, null=True)
-

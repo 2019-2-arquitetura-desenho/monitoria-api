@@ -92,11 +92,3 @@ def registration(request):
     }
     response = client.post('/set_profile/', profile_data)
     return Response(data={'token':jwt_token, 'profile':response.data}, status=HTTP_201_CREATED)
-    
-
-        
-   
-        
-    
-
-    

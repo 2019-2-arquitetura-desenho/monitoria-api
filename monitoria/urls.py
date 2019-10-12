@@ -7,7 +7,7 @@ from django.contrib.sites.models import Site
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('monitoria.auth_urls')),
-    path('', include('profiles.urls'))
+    path('', include('profiles.urls')),
     url('^', include('django.contrib.auth.urls')),
 ]
 
