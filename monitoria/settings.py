@@ -133,6 +133,9 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'monitoria.context_processors.global_settings',
             ],
+        'libraries':{
+            'get_Domain_link': 'monitoria.templatetags.poll_extras',
+            }
         },
     },
 ]
