@@ -1,9 +1,17 @@
 import os
 from datetime import timedelta
+import environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Env
+env = environ.Env(
+    # set casting, default value
+    DOMAIN=(str, "localhost:8000")
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+DOMAIN = env('DOMAIN')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -123,6 +131,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'monitoria.context_processors.global_settings',
             ],
         },
     },
