@@ -77,6 +77,7 @@ def registration(request):
     email = request.data.get('email')
     password = request.data.get('password')
     name = request.data.get('name')
+    name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
     user_data = {
