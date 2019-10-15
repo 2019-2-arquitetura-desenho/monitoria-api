@@ -71,6 +71,20 @@ def set_profile(request):
     serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
+@api_view(["POST"])
+def delete_profile(request):
+    client = Client()
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+    user.delete()
+        
+    return Response(status=HTTP_200_OK)   
 
 @api_view(["POST"])
 def registration(request):
