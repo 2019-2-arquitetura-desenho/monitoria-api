@@ -21,7 +21,8 @@ from django.test.client import Client
 # from profiles.validators import validate_mat
 # from django.core.exceptions import ValidationError
 
-unactive_profile = Response(data={'non_field_errors':'Perfil não existe'} ,status=HTTP_404_NOT_FOUND)
+unactive_profile = Response(data={'non_field_errors':['Perfil não existe']} ,status=HTTP_404_NOT_FOUND)
+unactive_user = Response(data={'non_field_errors':['Usuário não existe']} ,status=HTTP_404_NOT_FOUND)
 
 @api_view(["POST"])
 def get_profile(request):
@@ -60,7 +61,10 @@ def set_profile(request):
         return response
     # Decodificação do usuário
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
-    user = User.objects.get(pk=user_obj['user_id'])
+    try:
+        user = User.objects.get(pk=user_obj['user_id'])
+    except User.DoesNotExist:
+        return unactive_user
 
     # Obtendo profile
     try:
@@ -86,7 +90,10 @@ def deactivate_profile(request):
     if response.status_code != HTTP_200_OK:
         return response
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
-    user = User.objects.get(pk=user_obj['user_id'])
+    try:
+        user = User.objects.get(pk=user_obj['user_id'])
+    except User.DoesNotExist:
+        return unactive_user
     try:
         profile = Profile.objects.get(user=user)
         if not profile.active:
@@ -108,7 +115,10 @@ def activate_profile(request):
     if response.status_code != HTTP_200_OK:
         return response
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
-    user = User.objects.get(pk=user_obj['user_id'])
+    try:
+        user = User.objects.get(pk=user_obj['user_id'])
+    except User.DoesNotExist:
+        return unactive_user
     try:
         profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
