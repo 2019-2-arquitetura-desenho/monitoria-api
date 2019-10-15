@@ -6,3 +6,4 @@ django-rest-auth>=0.0 ,<1.0
 djangorestframework-jwt>=1.0, <2.0
 PyJWT>=1.0, <2.0
 django-environ>=0.4, <1.0
+whitenoise>=4.1, <5.0
