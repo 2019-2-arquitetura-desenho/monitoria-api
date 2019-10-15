@@ -5,7 +5,7 @@ from rest_framework.status import (
     # HTTP_403_FORBIDDEN,
     HTTP_200_OK,
     HTTP_201_CREATED,
-    # HTTP_404_NOT_FOUND,
+    HTTP_404_NOT_FOUND,
     # HTTP_400_BAD_REQUEST,
 )
 from django.contrib.auth.models import User
@@ -21,6 +21,7 @@ from django.test.client import Client
 # from profiles.validators import validate_mat
 # from django.core.exceptions import ValidationError
 
+unactive_profile = Response(data={'non_field_errors':'Perfil não existe'} ,status=HTTP_404_NOT_FOUND)
 
 @api_view(["POST"])
 def get_profile(request):
@@ -37,6 +38,8 @@ def get_profile(request):
 
     try:
         profile = Profile.objects.get(user=user)
+        if not profile.active:
+            return unactive_profile
     except Profile.DoesNotExist:
         profile = Profile(user=user)
         profile.save()
@@ -62,6 +65,8 @@ def set_profile(request):
     # Obtendo profile
     try:
         profile = Profile.objects.get(user=user)
+        if not profile.active:
+            return unactive_profile
     except Profile.DoesNotExist:
         profile = Profile(user=user)
         profile.save()
@@ -72,7 +77,7 @@ def set_profile(request):
     return Response(data=serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
-def delete_profile(request):
+def deactivate_profile(request):
     client = Client()
     jwt_token = request.data.get('token')
 
@@ -82,9 +87,36 @@ def delete_profile(request):
         return response
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
-    user.delete()
-        
-    return Response(status=HTTP_200_OK)   
+    try:
+        profile = Profile.objects.get(user=user)
+        if not profile.active:
+            return unactive_profile
+    except Profile.DoesNotExist:
+        profile = Profile(user=user)
+        profile.save()
+    profile.active = False
+    profile.save()
+    return Response(data={}, status=HTTP_200_OK)   
+
+@api_view(["POST"])
+def activate_profile(request):
+    client = Client()
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        profile = Profile(user=user)
+        profile.save()
+    profile.active = True
+    profile.save()
+    return Response(data={}, status=HTTP_200_OK)   
 
 @api_view(["POST"])
 def registration(request):

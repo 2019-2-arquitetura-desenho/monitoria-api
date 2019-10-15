@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True,)
+    active = models.BooleanField(default=True)
     name = models.CharField(max_length=50, default='')
     matricula = models.CharField(max_length=9, blank=True, null=True)
     ira = models.FloatField(blank=True, null=True)
