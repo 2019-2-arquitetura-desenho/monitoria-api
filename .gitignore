@@ -124,3 +124,7 @@ dmypy.json
 
 .vscode/
 .idea/
+
+#Migrations
+profiles/migrations/*
+monitoria/migrations/*
