@@ -128,3 +128,5 @@ dmypy.json
 #Migrations
 profiles/migrations/*
 monitoria/migrations/*
+# static_files
+static_files/
