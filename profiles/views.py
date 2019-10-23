@@ -22,7 +22,7 @@ from django.test.client import Client
 # from django.core.exceptions import ValidationError
 
 UNACTIVE_PROFILE = Response(data={'non_field_errors':['Perfil não existe']} ,status=HTTP_404_NOT_FOUND)
-UNACTIVE_USER = Response(data={'non_field_errors':['Usuário não existe']} ,status=HTTP_404_NOT_FOUND)
+NO_USER = Response(data={'non_field_errors':['Usuário não existe']} ,status=HTTP_404_NOT_FOUND)
 
 # Valida o token e retorna profile associado caso tenha sucesso
 # Caso contrário retorna False e o response de erro
@@ -34,7 +34,7 @@ def valide_token(jwt_token):
         try:
             user = User.objects.get(pk=user_obj['user_id'])
         except User.DoesNotExist:
-            return False, UNACTIVE_USER
+            return False, NO_USER
         try:
             profile = Profile.objects.get(user=user)
         except Profile.DoesNotExist:
