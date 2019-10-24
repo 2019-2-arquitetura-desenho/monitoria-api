@@ -35,6 +35,25 @@ class PdfExtractor:
 
         return reg
 
+    def read_sub(self):
+        # creating regex
+        pattern1 = '\d{6}  \w'
+        pattern2 = '\d{6}  \w.+'
+        search = re.compile(pattern1)
+        search2 = re.compile(pattern2)
+        # opening pdf file
+        with open(self.reg_pdf, 'rb') as f:
+            sub_extractor = pdftotext.PDF(f)
+
+            #finding pattern1
+            sub = search.findall("\n\n".join(sub_extractor))
+            #finding subject codes
+            #sub_code = re.findall("\d{6}", "".join(sub))
+            print(sub)
+        return sub
+
+    
+
 
 if __name__ == "__main__":
     
@@ -42,3 +61,4 @@ if __name__ == "__main__":
     obj = PdfExtractor(pdf_test)
     obj.read_IRA()
     obj.read_reg()
+    obj.read_sub()
