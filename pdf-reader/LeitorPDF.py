@@ -1,7 +1,8 @@
 import pdftotext
-import wget
-import os
+# import wget
+# import os
 import re
+
 
 class PdfExtractor:
 
@@ -10,7 +11,7 @@ class PdfExtractor:
 
     def read_IRA(self):
         # creating regex
-        pattern = '\d\.\d+'
+        pattern = r'\d\.\d+'
         search = re.compile(pattern)
         # opening pdf file
         with open(self.reg_pdf, 'rb') as f:
@@ -22,7 +23,7 @@ class PdfExtractor:
 
     def read_reg(self):
         # creating regex
-        pattern = '(\d{2}/\d{7})'
+        pattern = r'(\d{2}/\d{7})'
         search = re.compile(pattern)
         # opening pdf file
         with open(self.reg_pdf, 'rb') as f:
@@ -34,40 +35,38 @@ class PdfExtractor:
 
     def read_sub(self):
         # creating regex
-        pattern1 = '\d{6}  \w'
-        pattern2 = '\d{6}  \w.+'
+        pattern1 = r'\d{6}  \w'
+        pattern2 = r'\d{6}  \w.+'
         search = re.compile(pattern1)
         search2 = re.compile(pattern2)
         # opening pdf file
         with open(self.reg_pdf, 'rb') as f:
             sub_extractor = pdftotext.PDF(f)
 
-            #finding pattern1
+            # finding pattern1
             sub = search.findall("\n\n".join(sub_extractor))
-            #finding subject codes
-            sub_code = re.findall("\d{6}", "".join(sub))
-            
-            #finding pattern1
+            # finding subject codes
+            sub_code = re.findall(r"\d{6}", "".join(sub))
+
+            # finding pattern1
             sub2 = search2.findall("\n\n".join(sub_extractor))
-            #finding subject grades
+            # finding subject grades
             sub_grade = re.findall(" [A-Z]{2} ", "".join(sub2))
 
-            all_subs = [[sub_code[i], sub_grade[i]] for i in range(0, len(sub))]
-            
+            subs = [[sub_code[i], sub_grade[i]] for i in range(0, len(sub))]
+
             possible = [' MM ', ' MS ', ' SS ']
 
-            sub_res = [i for i in all_subs if i[1] in possible]
+            sub_res = [i for i in subs if i[1] in possible]
             for i in sub_res:
                 i[1] = i[1].replace(' ', '')
             sub_res = tuple(sub_res)
 
         return sub_res
 
-    
-
 
 if __name__ == "__main__":
-    
+
     pdf_test = './tmp.pdf'
     obj = PdfExtractor(pdf_test)
     obj.read_IRA()
