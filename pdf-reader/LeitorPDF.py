@@ -89,6 +89,7 @@ class SubExtractor(Extractor):
 def code(pdf_extractor: Extractor):
     pdf_extractor.extract()
 
+
 class Download():
     def PDFdownload(self):
         wget.download(url, './tmp.pdf')
@@ -100,10 +101,10 @@ class Download():
         local = './tmp.xml'
         return local
 
-    
 
 if __name__ == "__main__":
-    url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
+    url = 'https://res.cloudinary.com/gustavolima00/image/upload'
+    + '/v1571400279/historico.pdf'
     pdf_test = Download.PDFdownload(url)
     code(IraExtractor(pdf_test))
     code(RegExtractor(pdf_test))
