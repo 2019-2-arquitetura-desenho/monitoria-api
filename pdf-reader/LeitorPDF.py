@@ -27,6 +27,7 @@ class Extractor(ABC):
     def extractSub(self):
         pass
 
+
 class PDFExtractor(Extractor):
     def extractIra(self):
         # creating regex
@@ -87,6 +88,7 @@ class PDFExtractor(Extractor):
 
         return sub_res
 
+
 def extract_code(pdf_extractor: Extractor):
     pdf_extractor.template_method()
 
@@ -104,6 +106,7 @@ class Download():
 
 
 if __name__ == "__main__":
-    url = 'https://res.cloudinary.com/gustavolima00/image/upload' + '/v1571400279/historico.pdf'
+    url = 'https://res.cloudinary.com/gustavolima00/image/upload'
+    + '/v1571400279/historico.pdf'
     pdf_test = Download.PDFdownload(url)
     extract_code(PDFExtractor(pdf_test))
