@@ -34,6 +34,22 @@ class IraExtractor(Extractor):
         return ira
 
 
+class RegExtractor(Extractor):
+
+    def extract(self):
+        # creating regex
+        pattern = r'(\d{2}/\d{7})'
+        search = re.compile(pattern)
+        # opening pdf file
+        with open(self.reg_pdf, 'rb') as f:
+            reg_extractor = pdftotext.PDF(f)
+            reg = search.findall("\n\n".join(reg_extractor))
+            reg = reg[0]
+            # print(reg)
+
+        return reg
+
+
 def code(pdf_extractor: Extractor):
     pdf_extractor.extract()
 
@@ -42,3 +58,4 @@ if __name__ == "__main__":
 
     pdf_test = './tmp.pdf'
     code(IraExtractor(pdf_test))
+    code(RegExtractor(pdf_test))
