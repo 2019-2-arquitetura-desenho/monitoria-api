@@ -1,5 +1,5 @@
 import pdftotext
-# import wget
+import wget
 # import os
 import re
 from abc import ABC, abstractmethod
@@ -29,7 +29,8 @@ class IraExtractor(Extractor):
             IRA_extractor = pdftotext.PDF(f)
             ira = search.findall("\n\n".join(IRA_extractor))
             ira = ira[0]
-            # print(ira)
+            print()
+            print(ira)
 
         return ira
 
@@ -45,7 +46,7 @@ class RegExtractor(Extractor):
             reg_extractor = pdftotext.PDF(f)
             reg = search.findall("\n\n".join(reg_extractor))
             reg = reg[0]
-            # print(reg)
+            print(reg)
 
         return reg
 
@@ -80,7 +81,7 @@ class SubExtractor(Extractor):
             for i in sub_res:
                 i[1] = i[1].replace(' ', '')
             sub_res = tuple(sub_res)
-            # print(sub_res)
+            print(sub_res)
 
         return sub_res
 
@@ -88,10 +89,22 @@ class SubExtractor(Extractor):
 def code(pdf_extractor: Extractor):
     pdf_extractor.extract()
 
+class Download():
+    def PDFdownload(self):
+        wget.download(url, './tmp.pdf')
+        local = './tmp.pdf'
+        return local
+
+    def XMLdownload(self):
+        wget.download(url, './tmp.xml')
+        local = './tmp.xml'
+        return local
+
+    
 
 if __name__ == "__main__":
-
-    pdf_test = './tmp.pdf'
+    url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
+    pdf_test = Download.PDFdownload(url)
     code(IraExtractor(pdf_test))
     code(RegExtractor(pdf_test))
     code(SubExtractor(pdf_test))
