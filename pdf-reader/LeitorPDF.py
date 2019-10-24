@@ -48,9 +48,24 @@ class PdfExtractor:
             #finding pattern1
             sub = search.findall("\n\n".join(sub_extractor))
             #finding subject codes
-            #sub_code = re.findall("\d{6}", "".join(sub))
-            print(sub)
-        return sub
+            sub_code = re.findall("\d{6}", "".join(sub))
+            
+            #finding pattern1
+            sub2 = search2.findall("\n\n".join(sub_extractor))
+            #finding subject grades
+            sub_grade = re.findall(" [A-Z]{2} ", "".join(sub2))
+
+            all_subs = [[sub_code[i], sub_grade[i]] for i in range(0, len(sub))]
+            
+            possible = [' MM ', ' MS ', ' SS ']
+
+            sub_res = [i for i in all_subs if i[1] in possible]
+            for i in sub_res:
+                i[1] = i[1].replace(' ', '')
+            sub_res = tuple(sub_res)
+
+            print(sub_res)
+        return sub_res
 
     
 
