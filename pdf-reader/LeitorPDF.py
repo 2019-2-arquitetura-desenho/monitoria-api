@@ -17,8 +17,6 @@ class PdfExtractor:
             IRA_extractor = pdftotext.PDF(f)
             ira = search.findall("\n\n".join(IRA_extractor))
             ira = ira[0]
-            print()
-            print(ira)
 
         return ira
 
@@ -31,7 +29,6 @@ class PdfExtractor:
             reg_extractor = pdftotext.PDF(f)
             reg = search.findall("\n\n".join(reg_extractor))
             reg = reg[0]
-            print(reg)
 
         return reg
 
@@ -64,7 +61,6 @@ class PdfExtractor:
                 i[1] = i[1].replace(' ', '')
             sub_res = tuple(sub_res)
 
-            print(sub_res)
         return sub_res
 
     
