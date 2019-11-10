@@ -6,6 +6,7 @@ from django.contrib.postgres.fields import ArrayField
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True,)
     name = models.CharField(max_length=50, default='')
+    is_professor = models.BooleanField(default=False)
 
 class Student(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, primary_key=True,)

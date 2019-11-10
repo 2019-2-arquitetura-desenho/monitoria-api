@@ -70,7 +70,7 @@ def set_profile(request):
         try:
             profile = Profile.objects.get(user=user)
         except Profile.DoesNotExist:
-            profile = Profile(user=user)
+            profile = Profile(user=user, is_professor=is_professor)
             profile.save()
             professor = Professor(profile=profile)
             professor.save()
@@ -82,7 +82,7 @@ def set_profile(request):
         try:
             profile = Profile.objects.get(user=user)
         except Profile.DoesNotExist:
-            profile = Profile(user=user)
+            profile = Profile(user=user, is_professor=is_professor)
             profile.save()
             student = Student(profile=profile)
             student.save()

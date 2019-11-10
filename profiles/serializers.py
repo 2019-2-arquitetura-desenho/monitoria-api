@@ -12,6 +12,7 @@ class ProfileSerializer(serializers.Serializer):
     pk = serializers.ReadOnlyField()
     user = UserSerializer()
     name = serializers.CharField()
+    is_professor = serializers.BooleanField()
     
 
 class StudentSerializer(serializers.Serializer):
