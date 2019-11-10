@@ -6,7 +6,7 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     # HTTP_404_NOT_FOUND,
-    # HTTP_400_BAD_REQUEST,
+    HTTP_400_BAD_REQUEST,
 )
 from django.contrib.auth.models import User
 # from profiles.serializers import UserSerializer
@@ -42,8 +42,8 @@ def get_profile(request):
     try:
         profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
-        profile = Profile(user=user)
-        profile.save()
+        return Response(data={'erro': "Erro terminal: Usuário sem perfil"}, 
+                        status=HTTP_400_BAD_REQUEST)
 
     serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
