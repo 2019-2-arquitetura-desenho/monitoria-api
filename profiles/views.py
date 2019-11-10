@@ -10,8 +10,12 @@ from rest_framework.status import (
 )
 from django.contrib.auth.models import User
 # from profiles.serializers import UserSerializer
-from profiles.models import Profile
-from profiles.serializers import ProfileSerializer
+from profiles.models import Profile, Professor, Student
+from profiles.serializers import (
+    ProfileSerializer, 
+    ProfessorSerializer, 
+    StudentSerializer,
+)
 import jwt
 # import requests
 from monitoria.settings import SECRET_KEY
@@ -49,6 +53,7 @@ def get_profile(request):
 def set_profile(request):
     jwt_token = request.data.get('token')
     name = request.data.get('name')
+    is_professor = request.data.get('is_professor')
 
     # Validação do token
     client = Client()
@@ -59,16 +64,32 @@ def set_profile(request):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
+    serializer=None
     # Obtendo profile
-    try:
-        profile = Profile.objects.get(user=user)
-    except Profile.DoesNotExist:
-        profile = Profile(user=user)
+    if is_professor:
+        try:
+            profile = Profile.objects.get(user=user)
+        except Profile.DoesNotExist:
+            profile = Profile(user=user)
+            profile.save()
+            professor = Professor(profile=profile)
+            professor.save()
+        if name:
+            profile.name = name
         profile.save()
-    if name:
-        profile.name = name
-    profile.save()
-    serializer = ProfileSerializer(profile)
+        serializer = ProfileSerializer(profile)
+    else:
+        try:
+            profile = Profile.objects.get(user=user)
+        except Profile.DoesNotExist:
+            profile = Profile(user=user)
+            profile.save()
+            student = Student(profile=profile)
+            student.save()
+        if name:
+            profile.name = name
+        profile.save()
+        serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
 
@@ -77,9 +98,12 @@ def registration(request):
     email = request.data.get('email')
     password = request.data.get('password')
     name = request.data.get('name')
+    is_professor = request.data.get('is_professor')
+    print(email, password, name)
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
+    is_professor = is_professor if is_professor is not None else False
     user_data = {
         'email': email,
         'password1': password,
@@ -92,7 +116,8 @@ def registration(request):
     jwt_token = response.data['token']
     profile_data = {
         'token': jwt_token,
-        'name': name
+        'name': name,
+        'is_professor': is_professor,
     }
     response = client.post('/set_profile/', profile_data)
     return Response(data={'token': jwt_token,
