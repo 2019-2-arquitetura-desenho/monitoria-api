@@ -16,6 +16,7 @@ import jwt
 from monitoria.settings import SECRET_KEY
 from django.test.client import Client
 import ast
+import json
 
 
 @api_view(["POST"])
@@ -46,7 +47,6 @@ def set_profile(request):
     jwt_token = request.data.get('token')
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
-
     # Validação do token
     client = Client()
     response = client.post('/token_verify/', request.data)
@@ -56,7 +56,8 @@ def set_profile(request):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
-    serializer=None
+    is_professor = ast.literal_eval(is_professor)
+
     # Obtendo profile
     if is_professor:
         try:
@@ -91,7 +92,6 @@ def registration(request):
     password = request.data.get('password')
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
-    print(email, password, name)
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''

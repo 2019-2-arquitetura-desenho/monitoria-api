@@ -19,6 +19,7 @@ class StudentSerializer(serializers.Serializer):
     matricula = serializers.CharField()
     ira = serializers.FloatField()
     academic_record = serializers.ListField()
+    pdf_url = serializers.CharField()
 
 class ProfessorSerializer(serializers.Serializer):
     classes = serializers.ListField()
