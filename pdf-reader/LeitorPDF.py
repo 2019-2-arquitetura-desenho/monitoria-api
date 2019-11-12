@@ -116,9 +116,9 @@ def extract_code(pdf_extractor: Extractor):
         return error_json
 
     student_info = {
-        'Matricula': reg,
-        'IRA': ira,
-        'Materias': sub
+        'matricula': reg,
+        'ira': ira,
+        'materias': sub
     }
 
     # student_info['Matricula'] = reg
@@ -144,10 +144,10 @@ class Download():
 
 def getUrl():
     response = requests.get('http://localhost:8000/get_student')
-    url = response.json()['url']
+    url = response.json()['pdf_url']
     # url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
     pdf_test = Download.PDFdownload(url)
     return pdf_test
 
-# if __name__ == "__main__":
-#     print(extract_code(PDFExtractor(getUrl())))
+if __name__ == "__main__":
+    print(extract_code(PDFExtractor(getUrl())))
