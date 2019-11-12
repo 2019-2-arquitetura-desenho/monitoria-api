@@ -4,6 +4,7 @@ import wget
 import re
 from abc import ABC, abstractmethod
 import json
+import requests
 
 
 class Extractor(ABC):
@@ -17,7 +18,6 @@ class Extractor(ABC):
         sub = self.extractSub()
 
         return ira, reg, sub
-
 
     @abstractmethod
     def extractIra(self):
@@ -87,7 +87,8 @@ class PDFExtractor(Extractor):
                 # finding subject grades
                 sub_grade = re.findall(" [A-Z]{2} ", "".join(sub2))
 
-                subs = [[sub_code[i], sub_grade[i]] for i in range(0, len(sub))]
+                subs = [[sub_code[i], sub_grade[i]]
+                        for i in range(0, len(sub))]
 
                 possible = [' MM ', ' MS ', ' SS ']
 
@@ -108,18 +109,18 @@ def extract_code(pdf_extractor: Extractor):
 
     if not ira or not reg or not sub:
         error_json = {
-            'Error' : 'PDF Invalido'
+            'Error': 'PDF Invalido'
         }
-        
+
         # print(error_json)
         return error_json
 
     student_info = {
-        'Matricula' : reg,
-        'IRA' : ira,
-        'Materias' : sub
+        'Matricula': reg,
+        'IRA': ira,
+        'Materias': sub
     }
-    
+
     # student_info['Matricula'] = reg
     # student_info['Materias'] = sub
     # student_info['IRA'] = ira
@@ -130,18 +131,23 @@ def extract_code(pdf_extractor: Extractor):
 
 
 class Download():
-    def PDFdownload(self):
+    def PDFdownload(url):
         wget.download(url, './tmp.pdf')
         local = './tmp.pdf'
         return local
 
-    def XMLdownload(self):
+    def XMLdownload(url):
         wget.download(url, './tmp.xml')
         local = './tmp.xml'
         return local
 
 
-if __name__ == "__main__":
-    url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
+def getUrl():
+    response = requests.get('http://localhost:8000/get_student')
+    url = response.json()['url']
+    # url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
     pdf_test = Download.PDFdownload(url)
-    extract_code(PDFExtractor(pdf_test))
+    return pdf_test
+
+# if __name__ == "__main__":
+#     print(extract_code(PDFExtractor(getUrl())))
