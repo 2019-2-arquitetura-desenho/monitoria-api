@@ -137,7 +137,7 @@ def get_professor(request):
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = ProfessorSerializer(professor)
-    return Response(serializer.data, HTTP_200_OK)
+    return Response(serializer.data, status=HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -166,7 +166,7 @@ def professor_classes(request):
     professor.save()
 
     serializer = ProfessorSerializer(professor)
-    return Response(serializer.data, HTTP_200_OK)
+    return Response(serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
 def get_student(request):
@@ -189,4 +189,35 @@ def get_student(request):
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = StudentSerializer(student)
-    return Response(serializer.data, HTTP_200_OK)
+    return Response(serializer.data, status=HTTP_200_OK)
+
+@api_view(["POST"])
+def set_student(request):
+    jwt_token = request.data.get('token')
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    profile = Profile.objects.get(user=user)
+
+    pdf_url = request.data.get('pdf_url')
+
+    try:
+         student = Student.objects.get(profile=profile)
+    except Student.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de estudante"}, 
+                        status=HTTP_400_BAD_REQUEST)
+
+    student.pdf_url = pdf_url
+
+    # Calls pdf_extractor and save other data
+
+    student.save()
+
+    serializer = StudentSerializer(student)
+    return Response(serializer.data, status=HTTP_200_OK)
