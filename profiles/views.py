@@ -1,15 +1,11 @@
-# from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.status import (
-    # HTTP_403_FORBIDDEN,
     HTTP_200_OK,
     HTTP_201_CREATED,
-    # HTTP_404_NOT_FOUND,
     HTTP_400_BAD_REQUEST,
 )
 from django.contrib.auth.models import User
-# from profiles.serializers import UserSerializer
 from profiles.models import Profile, Professor, Student
 from profiles.serializers import (
     ProfileSerializer, 
@@ -17,13 +13,9 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
-# import requests
 from monitoria.settings import SECRET_KEY
-# from rest_framework_jwt.views import verify_jwt_token
 from django.test.client import Client
-# from profiles.validators import validate_ira
-# from profiles.validators import validate_mat
-# from django.core.exceptions import ValidationError
+import ast
 
 
 @api_view(["POST"])
@@ -42,7 +34,7 @@ def get_profile(request):
     try:
         profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
-        return Response(data={'erro': "Erro terminal: Usuário sem perfil"}, 
+        return Response(data={'error': "Erro terminal: Usuário sem perfil"}, 
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = ProfileSerializer(profile)
@@ -122,3 +114,56 @@ def registration(request):
     response = client.post('/set_profile/', profile_data)
     return Response(data={'token': jwt_token,
                     'profile': response.data}, status=HTTP_201_CREATED)
+
+@api_view(["POST"])
+def get_professor(request):
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    profile = Profile.objects.get(user=user)
+
+    try:
+        professor = Professor.objects.get(profile=profile)
+    except Professor.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"}, 
+                        status=HTTP_400_BAD_REQUEST)
+
+    serializer = ProfessorSerializer(professor)
+    return Response(serializer.data, HTTP_200_OK)
+
+
+@api_view(["POST"])
+def professor_classes(request):
+    jwt_token = request.data.get('token')
+    str_classes = request.data.get('classes')
+    classes = ast.literal_eval(str_classes)
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    profile = Profile.objects.get(user=user)
+
+    try:
+        professor = Professor.objects.get(profile=profile)
+    except Professor.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"}, 
+                        status=HTTP_400_BAD_REQUEST)
+
+    professor.classes = classes
+    professor.save()
+
+    serializer = ProfessorSerializer(professor)
+    return Response(serializer.data, HTTP_200_OK)
