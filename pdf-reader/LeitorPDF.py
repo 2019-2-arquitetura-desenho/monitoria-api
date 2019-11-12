@@ -3,6 +3,7 @@ import wget
 # import os
 import re
 from abc import ABC, abstractmethod
+import json
 
 
 class Extractor(ABC):
@@ -11,9 +12,12 @@ class Extractor(ABC):
         self.reg_pdf = reg_pdf
 
     def template_method(self):
-        self.extractIra()
-        self.extractReg()
-        self.extractSub()
+        ira = self.extractIra()
+        reg = self.extractReg()
+        sub = self.extractSub()
+
+        return ira, reg, sub
+
 
     @abstractmethod
     def extractIra(self):
@@ -90,7 +94,22 @@ class PDFExtractor(Extractor):
 
 
 def extract_code(pdf_extractor: Extractor):
-    pdf_extractor.template_method()
+    ira, reg, sub = pdf_extractor.template_method()
+
+    student_info = {
+        'Matricula' : reg,
+        'IRA' : ira,
+        'Materias' : sub
+    }
+    
+    # student_info['Matricula'] = reg
+    # student_info['Materias'] = sub
+    # student_info['IRA'] = ira
+
+    json_data = json.dumps(student_info)
+    # print(json_data)
+
+    return json_data
 
 
 class Download():
@@ -106,7 +125,6 @@ class Download():
 
 
 if __name__ == "__main__":
-    url = 'https://res.cloudinary.com/gustavolima00/image/upload'
-    + '/v1571400279/historico.pdf'
+    url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
     pdf_test = Download.PDFdownload(url)
     extract_code(PDFExtractor(pdf_test))
