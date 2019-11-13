@@ -10,7 +10,7 @@ class Profile(models.Model):
 class Student(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, primary_key=True,)
     pdf_url = models.TextField(null=True)
-    matricula = models.CharField(max_length=9, blank=True, null=True)
+    matricula = models.CharField(max_length=10, blank=True, null=True)
     ira = models.FloatField(blank=True, null=True)
     academic_record = ArrayField(ArrayField(models.CharField(max_length=10), size=2), default=list)
     

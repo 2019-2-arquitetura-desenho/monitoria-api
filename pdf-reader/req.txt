@@ -1,2 +1,0 @@
-pdftotext==2.1.2
-wget==3.2

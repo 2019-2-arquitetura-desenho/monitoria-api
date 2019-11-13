@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 import json
 import requests
 
-
 class Extractor(ABC):
 
     def __init__(self, reg_pdf):
@@ -125,9 +124,9 @@ def extract_code(pdf_extractor: Extractor):
     # student_info['Materias'] = sub
     # student_info['IRA'] = ira
 
-    json_data = json.dumps(student_info)
+    # json_data = json.dumps(student_info)
     # print(json_data)
-    return json_data
+    return student_info
 
 
 class Download():
@@ -142,12 +141,18 @@ class Download():
         return local
 
 
-def getUrl():
-    response = requests.get('http://localhost:8000/get_student')
-    url = response.json()['pdf_url']
-    # url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
-    pdf_test = Download.PDFdownload(url)
-    return pdf_test
 
-if __name__ == "__main__":
-    print(extract_code(PDFExtractor(getUrl())))
+# def getUrl():
+#     response = requests.get('http://localhost:8000/get_student')
+
+#     url = response.json()['pdf_url']
+#     # url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
+#     pdf_test = Download.PDFdownload(url)
+#     return pdf_test
+
+def getData(url):
+    pdf_test = Download.PDFdownload(url)
+    return extract_code(PDFExtractor(pdf_test))
+
+# if __name__ == "__main__":
+#     extract_code(PDFExtractor(getUrl()))

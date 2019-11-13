@@ -8,8 +8,8 @@ from rest_framework.status import (
 from django.contrib.auth.models import User
 from profiles.models import Profile, Professor, Student
 from profiles.serializers import (
-    ProfileSerializer, 
-    ProfessorSerializer, 
+    ProfileSerializer,
+    ProfessorSerializer,
     StudentSerializer,
 )
 import jwt
@@ -17,6 +17,7 @@ from monitoria.settings import SECRET_KEY
 from django.test.client import Client
 import ast
 import json
+from pdf_reader.LeitorPDF import getData
 
 
 @api_view(["POST"])
@@ -35,7 +36,7 @@ def get_profile(request):
     try:
         profile = Profile.objects.get(user=user)
     except Profile.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Usuário sem perfil"}, 
+        return Response(data={'error': "Erro terminal: Usuário sem perfil"},
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = ProfileSerializer(profile)
@@ -113,7 +114,8 @@ def registration(request):
     }
     response = client.post('/set_profile/', profile_data)
     return Response(data={'token': jwt_token,
-                    'profile': response.data}, status=HTTP_201_CREATED)
+                          'profile': response.data}, status=HTTP_201_CREATED)
+
 
 @api_view(["POST"])
 def get_professor(request):
@@ -133,7 +135,7 @@ def get_professor(request):
     try:
         professor = Professor.objects.get(profile=profile)
     except Professor.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"}, 
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"},
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = ProfessorSerializer(professor)
@@ -159,7 +161,7 @@ def professor_classes(request):
     try:
         professor = Professor.objects.get(profile=profile)
     except Professor.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"}, 
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de professor"},
                         status=HTTP_400_BAD_REQUEST)
 
     professor.classes = classes
@@ -167,6 +169,7 @@ def professor_classes(request):
 
     serializer = ProfessorSerializer(professor)
     return Response(serializer.data, status=HTTP_200_OK)
+
 
 @api_view(["POST"])
 def get_student(request):
@@ -185,11 +188,12 @@ def get_student(request):
     try:
         student = Student.objects.get(profile=profile)
     except Student.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de estudante"}, 
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de estudante"},
                         status=HTTP_400_BAD_REQUEST)
 
     serializer = StudentSerializer(student)
     return Response(serializer.data, status=HTTP_200_OK)
+
 
 @api_view(["POST"])
 def set_student(request):
@@ -208,12 +212,21 @@ def set_student(request):
     pdf_url = request.data.get('pdf_url')
 
     try:
-         student = Student.objects.get(profile=profile)
+        student = Student.objects.get(profile=profile)
     except Student.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de estudante"}, 
+        return Response(data={'error': "Erro terminal: Este usuáro não possui perfil de estudante"},
                         status=HTTP_400_BAD_REQUEST)
 
     student.pdf_url = pdf_url
+
+    data = getData(pdf_url)
+    print("##################################################")
+    print(data)
+    student.matricula = data['matricula']
+    student.ira = data['ira']
+    student.academic_record = data['materias']
+    
+
 
     # Calls pdf_extractor and save other data
 
