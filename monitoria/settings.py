@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     # Apps
-    'profiles'
+    'profiles',
+    'disciplines'
 ]
 SITE_ID = 1
 
