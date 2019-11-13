@@ -127,3 +127,6 @@ dmypy.json
 
 # static_files
 static_files/
+
+#Migrations
+*/migrations/
