@@ -108,7 +108,7 @@ def extract_code(pdf_extractor: Extractor):
 
     if not ira or not reg or not sub:
         error_json = {
-            'Error': 'PDF Invalido'
+            'error': 'PDF Invalido'
         }
 
         # print(error_json)

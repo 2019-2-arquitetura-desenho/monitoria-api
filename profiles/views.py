@@ -220,16 +220,13 @@ def set_student(request):
     student.pdf_url = pdf_url
 
     data = getData(pdf_url)
-    print("##################################################")
-    print(data)
+    if data['error'] != None:
+        return Response(data=data, status=HTTP_400_BAD_REQUEST)
+
     student.matricula = data['matricula']
     student.ira = data['ira']
     student.academic_record = data['materias']
     
-
-
-    # Calls pdf_extractor and save other data
-
     student.save()
 
     serializer = StudentSerializer(student)
