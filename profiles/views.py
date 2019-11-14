@@ -4,6 +4,7 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
+    HTTP_500_INTERNAL_SERVER_ERROR,
 )
 from django.contrib.auth.models import User
 from profiles.models import Profile, Professor, Student
@@ -93,15 +94,24 @@ def registration(request):
     password = request.data.get('password')
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
+    pdf_url = request.data.get('pdf_url')
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
     is_professor = is_professor if is_professor is not None else False
+    pdf_url = pdf_url if pdf_url is not None else False
     user_data = {
         'email': email,
         'password1': password,
         'password2': password,
     }
+    pdf_data = None
+    if not is_professor:
+        # Necessario validar o pdf antes de prosseguir
+        pdf_data = getData(pdf_url)
+        if pdf_data['error'] != None:
+            return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
+
     client = Client()
     response = client.post('/rest_registration/', user_data)
     if response.status_code != HTTP_201_CREATED:
@@ -112,7 +122,12 @@ def registration(request):
         'name': name,
         'is_professor': is_professor,
     }
+    # Definir o perfil
     response = client.post('/set_profile/', profile_data)
+    # Adicionar os dados do pdf ao perfil
+    if not is_professor:
+        setStudentByData(pdf_data, jwt_token)
+    
     return Response(data={'token': jwt_token,
                           'profile': response.data}, status=HTTP_201_CREATED)
 
@@ -231,3 +246,25 @@ def set_student(request):
 
     serializer = StudentSerializer(student)
     return Response(serializer.data, status=HTTP_200_OK)
+
+def setStudentByData(data):
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    profile = Profile.objects.get(user=user)
+
+    pdf_url = request.data.get('pdf_url')
+
+    try:
+        student = Student.objects.get(profile=profile)
+    except Student.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
+                        status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    student.matricula = data['matricula']
+    student.ira = data['ira']
+    student.academic_record = data['materias']
+
+    student.save()
+
+    return
