@@ -109,8 +109,11 @@ def registration(request):
     if not is_professor:
         # Necessario validar o pdf antes de prosseguir
         pdf_data = getData(pdf_url)
-        if pdf_data['error'] != None:
-            return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
+        try:
+            if pdf_data['error']:
+              return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
+        except:
+            pass
 
     client = Client()
     response = client.post('/rest_registration/', user_data)
@@ -235,8 +238,11 @@ def set_student(request):
     student.pdf_url = pdf_url
 
     data = getData(pdf_url)
-    if data['error'] != None:
-        return Response(data=data, status=HTTP_400_BAD_REQUEST)
+    try:
+        if data['error'] != None:
+            return Response(data=data, status=HTTP_400_BAD_REQUEST)
+    except:
+        pass
 
     student.matricula = data['matricula']
     student.ira = data['ira']
@@ -247,13 +253,11 @@ def set_student(request):
     serializer = StudentSerializer(student)
     return Response(serializer.data, status=HTTP_200_OK)
 
-def setStudentByData(data):
+def setStudentByData(data, jwt_token):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
     profile = Profile.objects.get(user=user)
-
-    pdf_url = request.data.get('pdf_url')
 
     try:
         student = Student.objects.get(profile=profile)
