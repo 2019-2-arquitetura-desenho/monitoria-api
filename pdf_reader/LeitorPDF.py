@@ -3,8 +3,9 @@ import wget
 # import os
 import re
 from abc import ABC, abstractmethod
-import json
-import requests
+# import json
+# import requests
+
 
 class Extractor(ABC):
 
@@ -140,15 +141,15 @@ class Download():
         local = './tmp.xml'
         return local
 
-
-
 # def getUrl():
 #     response = requests.get('http://localhost:8000/get_student')
 
 #     url = response.json()['pdf_url']
-#     # url = 'https://res.cloudinary.com/gustavolima00/image/upload/v1571400279/historico.pdf'
+#     # url = 'https://res.cloudinary.com/gustavolima00
+# /image/upload/v1571400279/historico.pdf'
 #     pdf_test = Download.PDFdownload(url)
 #     return pdf_test
+
 
 def getData(url):
     pdf_test = Download.PDFdownload(url)
