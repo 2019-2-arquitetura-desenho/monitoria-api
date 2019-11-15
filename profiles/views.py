@@ -19,6 +19,7 @@ from django.test.client import Client
 import ast
 import json
 from pdf_reader.LeitorPDF import getData
+import urllib
 
 
 @api_view(["POST"])
@@ -272,3 +273,42 @@ def setStudentByData(data, jwt_token):
     student.save()
 
     return
+
+@api_view(["POST"])
+def get_disciplines(request):
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    profile = Profile.objects.get(user=user)
+
+    try:
+        student = Student.objects.get(profile=profile)
+    except Student.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    url = 'http://amonitoria-offers.herokuapp.com/discipline/?format=json'
+    response = urllib.request.urlopen(url)
+    data = json.loads(response.read())
+
+    subjects_dict = {}
+
+    for discipline in data:
+        subjects_dict[str(discipline['code'])] = discipline
+    
+    disciplines_vector = []
+    for discipline in student.academic_record:
+        disciplines_vector.append(subjects_dict[discipline[0]])
+    
+
+    return Response(disciplines_vector, status=HTTP_200_OK)
+        
+    
