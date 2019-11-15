@@ -24,3 +24,4 @@ Para rodar as migrations:
     make bash
     python3 manage.py makemigrations
     python3 manage.py migrate
+    python manage.py migrate --run-syncdb
