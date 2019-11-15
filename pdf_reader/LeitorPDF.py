@@ -1,6 +1,6 @@
 import pdftotext
 import wget
-# import os
+import os
 import re
 from abc import ABC, abstractmethod
 # import json
@@ -132,11 +132,19 @@ def extract_code(pdf_extractor: Extractor):
 
 class Download():
     def PDFdownload(url):
-        wget.download(url, './tmp.pdf')
+        if(os.path.isfile('./tmp.pdf')):
+            os.remove("tmp.pdf")
+        if(os.path.isfile('./tmp (1).pdf')):
+            os.remove("tmp (1).pdf")
+        wget.download(url,'./tmp.pdf')
         local = './tmp.pdf'
         return local
 
     def XMLdownload(url):
+        if(os.path.isfile('./tmp.xml)):
+            os.remove("tmp.xml ")
+        if(os.path.isfile('./tmp (1).xml')):
+            os.remove("tmp (1).xml")
         wget.download(url, './tmp.xml')
         local = './tmp.xml'
         return local
