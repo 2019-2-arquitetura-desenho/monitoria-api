@@ -95,18 +95,24 @@ def registration(request):
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
     pdf_url = request.data.get('pdf_url')
+
+    print('is_professor', is_professor)
+
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
     is_professor = is_professor if is_professor is not None else False
-    pdf_url = pdf_url if pdf_url is not None else False
+    #pdf_url = pdf_url if pdf_url is not None else False
+
+    print('is_professor', is_professor)
+
     user_data = {
         'email': email,
         'password1': password,
         'password2': password,
     }
     pdf_data = None
-    if not is_professor:
+    if not is_professor and pdf_url!=None:
         # Necessario validar o pdf antes de prosseguir
         pdf_data = getData(pdf_url)
         try:
@@ -119,6 +125,7 @@ def registration(request):
     response = client.post('/rest_registration/', user_data)
     if response.status_code != HTTP_201_CREATED:
         return response
+        
     jwt_token = response.data['token']
     profile_data = {
         'token': jwt_token,
@@ -128,7 +135,7 @@ def registration(request):
     # Definir o perfil
     response = client.post('/set_profile/', profile_data)
     # Adicionar os dados do pdf ao perfil
-    if not is_professor:
+    if not is_professor and pdf_data!=None:
         setStudentByData(pdf_data, jwt_token)
     
     return Response(data={'token': jwt_token,
