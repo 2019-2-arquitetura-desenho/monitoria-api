@@ -2,12 +2,17 @@ from rest_framework import serializers
 from disciplines.models import Class
 from disciplines.models import Discipline
 
-class ClassSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Class
-        fields = ['name', 'room', 'schedule', 'shift', 'professors']
+class DisciplineSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    code = serializers.IntegerField()
 
-class DisciplineSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Discipline
-        fields = ['name', 'cod', 'credts', 'classes']
+class ClassSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    shift = serializers.CharField()
+    discipline = DisciplineSerializer()
+
+
+# class ClassSerializer(serializers.HyperlinkedModelSerializer):
+#     class Meta:
+#         model = Class
+#         fields = ['name', 'shift', 'discipline']
