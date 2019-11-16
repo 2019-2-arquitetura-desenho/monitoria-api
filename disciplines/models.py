@@ -19,3 +19,4 @@ class Class(models.Model):
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)
     period = models.ForeignKey(Period, on_delete=models.CASCADE)
+    ranking = ArrayField(ArrayField(models.CharField(max_length=20)), default=list)

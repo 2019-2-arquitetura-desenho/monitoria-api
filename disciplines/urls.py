@@ -4,7 +4,7 @@ from disciplines import views
 
 router = routers.DefaultRouter()
 router.register(r'class', views.ClassViewSet)
-router.register(r'discipline', views.DisciplineViewSet)
+router.register(r'disciplines', views.DisciplineViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('get_professor/', views.get_professor),
     path('remove_professor/', views.remove_professor),
     path('create_period/', views.create_period),
+    path('register_discipline/', views.register_discipline),
 ]
