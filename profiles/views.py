@@ -96,15 +96,10 @@ def registration(request):
     is_professor = request.data.get('is_professor')
     pdf_url = request.data.get('pdf_url')
 
-    print('is_professor', is_professor)
-
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
     is_professor = is_professor if is_professor is not None else False
-    #pdf_url = pdf_url if pdf_url is not None else False
-
-    print('is_professor', is_professor)
 
     user_data = {
         'email': email,
@@ -112,15 +107,20 @@ def registration(request):
         'password2': password,
     }
     pdf_data = None
-    if not is_professor and pdf_url!=None:
-        # Necessario validar o pdf antes de prosseguir
-        pdf_data = getData(pdf_url)
-        try:
-            if pdf_data['error']:
-              return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
-        except:
-            pass
 
+    if not is_professor:
+        # Necessario validar o pdf antes de prosseguir
+        if pdf_url==None:
+            return Response(data={'error':'Impossivel cadastrar um estudante sem seu pdf'}, 
+                            status=HTTP_400_BAD_REQUEST)
+        else:
+            pdf_data = getData(pdf_url)
+            try:
+                if pdf_data['error']:
+                    return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
+            except:
+                pass
+        
     client = Client()
     response = client.post('/rest_registration/', user_data)
     if response.status_code != HTTP_201_CREATED:
