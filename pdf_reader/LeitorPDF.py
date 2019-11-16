@@ -108,9 +108,7 @@ def extract_code(pdf_extractor: Extractor):
     ira, reg, sub = pdf_extractor.template_method()
 
     if not ira or not reg or not sub:
-        error_json = {
-            'error': 'PDF Invalido'
-        }
+        error_json = { 'error': 'PDF Invalido' }
 
         # print(error_json)
         return error_json
@@ -160,8 +158,12 @@ class Download():
 
 
 def getData(url):
-    pdf_test = Download.PDFdownload(url)
-    return extract_code(PDFExtractor(pdf_test))
+    try:
+        pdf_test = Download.PDFdownload(url)
+        return extract_code(PDFExtractor(pdf_test))
+    except:
+        error_json = { 'error': 'PDF Invalido' }
+        return error_json
 
 # if __name__ == "__main__":
 #     extract_code(PDFExtractor(getUrl()))
