@@ -14,7 +14,7 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
-from monitoria.settings import SECRET_KEY
+from monitoria.settings import SECRET_KEY, HEROKU_URL
 from django.test.client import Client
 import ast
 import json
@@ -295,20 +295,21 @@ def get_disciplines(request):
         return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
                         status=HTTP_400_BAD_REQUEST)
 
-    url = 'http://amonitoria-offers.herokuapp.com/discipline/?format=json'
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-
-    subjects_dict = {}
-
-    for discipline in data:
-        subjects_dict[str(discipline['code'])] = discipline
-    
-    disciplines_vector = []
-    for discipline in student.academic_record:
-        disciplines_vector.append(subjects_dict[discipline[0]])
-    
-
-    return Response(disciplines_vector, status=HTTP_200_OK)
+    try:
+        response = urllib.request.urlopen(HEROKU_URL)
+        data = json.loads(response.read())
         
+        subjects_dict = {}
+        
+        for discipline in data:
+            subjects_dict[str(discipline['code'])] = discipline
+        
+        disciplines_vector = []
+        for discipline in student.academic_record:
+            disciplines_vector.append(subjects_dict[discipline[0]])
+
+        return Response(disciplines_vector, status=HTTP_200_OK)
     
+    except:
+        return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
+                        status=HTTP_400_BAD_REQUEST)
