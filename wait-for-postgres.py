@@ -5,8 +5,8 @@ import time
 while True:
     try:
         conn = psycopg2.connect("dbname='postgres' user='postgres' host='monitoria-db'")
-        print('connected')
+        print('Connected')
         break
     except Exception as ex:
-        print('ex')
+        print('Waiting for DB connection')
         time.sleep(0.5)
