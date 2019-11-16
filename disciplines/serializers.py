@@ -1,18 +1,16 @@
 from rest_framework import serializers
-from disciplines.models import Class
-from disciplines.models import Discipline
 
 class DisciplineSerializer(serializers.Serializer):
     name = serializers.CharField()
     code = serializers.IntegerField()
 
+class PeriodSerializer(serializers.Serializer):
+    initial_time = serializers.DateField()
+    end_time = serializers.DateField()
+
 class ClassSerializer(serializers.Serializer):
     name = serializers.CharField()
     shift = serializers.CharField()
     discipline = DisciplineSerializer()
-
-
-# class ClassSerializer(serializers.HyperlinkedModelSerializer):
-#     class Meta:
-#         model = Class
-#         fields = ['name', 'shift', 'discipline']
+    professors = serializers.ListField()
+    period = PeriodSerializer()

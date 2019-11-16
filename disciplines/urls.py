@@ -12,4 +12,5 @@ urlpatterns = [
     path('add_professor/', views.add_professor),
     path('get_professor/', views.get_professor),
     path('remove_professor/', views.remove_professor),
+    path('create_period/', views.create_period),
 ]
