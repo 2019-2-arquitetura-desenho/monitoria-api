@@ -14,7 +14,7 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
-from monitoria.settings import SECRET_KEY
+from monitoria.settings import SECRET_KEY, HEROKU_URL
 from django.test.client import Client
 import ast
 import json
@@ -44,9 +44,35 @@ def get_profile(request):
     serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
-
 @api_view(["POST"])
 def set_profile(request):
+    jwt_token = request.data.get('token')
+    name = request.data.get('name')
+
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    if name:
+        try:
+            profile = Profile.objects.get(user=user)
+        except:
+            return Response(data={'error': 'Erro terminal: Usuario nao possui perfil'}, 
+                            status=HTTP_400_BAD_REQUEST)
+        profile.name = name
+        profile.save()
+        serializer = ProfileSerializer(profile)
+    else:
+        return Response(data={'error': 'Nome invalido'}, status=HTTP_400_BAD_REQUEST)
+
+    return Response(data=serializer.data, status=HTTP_200_OK)
+
+@api_view(["POST"])
+def create_profile(request):
     jwt_token = request.data.get('token')
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
@@ -59,29 +85,27 @@ def set_profile(request):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
-    is_professor = ast.literal_eval(is_professor)
+    if is_professor:
+        is_professor = ast.literal_eval(is_professor)
+    else:
+        return Response(data={'error': 'Parametro invalido: is_professor'}, 
+                        status=HTTP_400_BAD_REQUEST)
 
     # Obtendo profile
     if is_professor:
-        try:
-            profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            profile = Profile(user=user, is_professor=is_professor)
-            profile.save()
-            professor = Professor(profile=profile)
-            professor.save()
+        profile = Profile(user=user, is_professor=is_professor)
+        profile.save()
+        professor = Professor(profile=profile)
+        professor.save()
         if name:
             profile.name = name
         profile.save()
         serializer = ProfileSerializer(profile)
     else:
-        try:
-            profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            profile = Profile(user=user, is_professor=is_professor)
-            profile.save()
-            student = Student(profile=profile)
-            student.save()
+        profile = Profile(user=user, is_professor=is_professor)
+        profile.save()
+        student = Student(profile=profile)
+        student.save()
         if name:
             profile.name = name
         profile.save()
@@ -96,30 +120,37 @@ def registration(request):
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
     pdf_url = request.data.get('pdf_url')
+
     name = name if name is not None else ''
     email = email if email is not None else ''
     password = password if password is not None else ''
     is_professor = is_professor if is_professor is not None else False
-    pdf_url = pdf_url if pdf_url is not None else False
+
     user_data = {
         'email': email,
         'password1': password,
         'password2': password,
     }
     pdf_data = None
+
     if not is_professor:
         # Necessario validar o pdf antes de prosseguir
-        pdf_data = getData(pdf_url)
-        try:
-            if pdf_data['error']:
-              return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
-        except:
-            pass
-
+        if pdf_url==None:
+            return Response(data={'error':'Impossivel cadastrar um estudante sem seu pdf'}, 
+                            status=HTTP_400_BAD_REQUEST)
+        else:
+            pdf_data = getData(pdf_url)
+            try:
+                if pdf_data['error']:
+                    return Response(data=pdf_data, status=HTTP_400_BAD_REQUEST)
+            except:
+                pass
+        
     client = Client()
     response = client.post('/rest_registration/', user_data)
     if response.status_code != HTTP_201_CREATED:
         return response
+        
     jwt_token = response.data['token']
     profile_data = {
         'token': jwt_token,
@@ -127,10 +158,10 @@ def registration(request):
         'is_professor': is_professor,
     }
     # Definir o perfil
-    response = client.post('/set_profile/', profile_data)
+    response = client.post('/create_profile/', profile_data)
     # Adicionar os dados do pdf ao perfil
-    if not is_professor:
-        setStudentByData(pdf_data, jwt_token)
+    if not is_professor and pdf_data!=None:
+        setStudentByData(pdf_data, pdf_url, jwt_token)
     
     return Response(data={'token': jwt_token,
                           'profile': response.data}, status=HTTP_201_CREATED)
@@ -254,7 +285,7 @@ def set_student(request):
     serializer = StudentSerializer(student)
     return Response(serializer.data, status=HTTP_200_OK)
 
-def setStudentByData(data, jwt_token):
+def setStudentByData(data, pdf_url, jwt_token):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
@@ -265,6 +296,8 @@ def setStudentByData(data, jwt_token):
     except Student.DoesNotExist:
         return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
                         status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    student.pdf_url = pdf_url
 
     student.matricula = data['matricula']
     student.ira = data['ira']
@@ -294,20 +327,19 @@ def get_disciplines(request):
         return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
                         status=HTTP_400_BAD_REQUEST)
 
-    url = 'http://amonitoria-offers.herokuapp.com/discipline/?format=json'
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
+    try:
+        response = urllib.request.urlopen(HEROKU_URL+'/discipline/?format=json')
+        data = json.loads(response.read())
+            
+        subjects_dict = {}
+        for discipline in data:
+            subjects_dict[str(discipline['code'])] = discipline
 
-    subjects_dict = {}
+        disciplines_vector = []
+        for discipline in student.academic_record:
+            disciplines_vector.append(subjects_dict[discipline[0]])
 
-    for discipline in data:
-        subjects_dict[str(discipline['code'])] = discipline
-    
-    disciplines_vector = []
-    for discipline in student.academic_record:
-        disciplines_vector.append(subjects_dict[discipline[0]])
-    
-
-    return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
-        
-    
+        return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
+    except:
+        return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
+                        status=HTTP_400_BAD_REQUEST)

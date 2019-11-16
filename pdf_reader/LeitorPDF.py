@@ -1,6 +1,6 @@
 import pdftotext
 import wget
-# import os
+import os
 import re
 from abc import ABC, abstractmethod
 # import json
@@ -108,9 +108,7 @@ def extract_code(pdf_extractor: Extractor):
     ira, reg, sub = pdf_extractor.template_method()
 
     if not ira or not reg or not sub:
-        error_json = {
-            'error': 'PDF Invalido'
-        }
+        error_json = { 'error': 'PDF Invalido' }
 
         # print(error_json)
         return error_json
@@ -132,11 +130,19 @@ def extract_code(pdf_extractor: Extractor):
 
 class Download():
     def PDFdownload(url):
+        if(os.path.isfile('./tmp.pdf')):
+            os.remove("tmp.pdf")
+        if(os.path.isfile('./tmp (1).pdf')):
+            os.remove("tmp (1).pdf")
         wget.download(url, './tmp.pdf')
         local = './tmp.pdf'
         return local
 
     def XMLdownload(url):
+        if(os.path.isfile('./tmp.xml ')):
+            os.remove("tmp.xml ")
+        if(os.path.isfile('./tmp (1).xml')):
+            os.remove("tmp (1).xml ")
         wget.download(url, './tmp.xml')
         local = './tmp.xml'
         return local
@@ -152,8 +158,12 @@ class Download():
 
 
 def getData(url):
-    pdf_test = Download.PDFdownload(url)
-    return extract_code(PDFExtractor(pdf_test))
+    try:
+        pdf_test = Download.PDFdownload(url)
+        return extract_code(PDFExtractor(pdf_test))
+    except:
+        error_json = { 'error': 'PDF Invalido' }
+        return error_json
 
 # if __name__ == "__main__":
 #     extract_code(PDFExtractor(getUrl()))
