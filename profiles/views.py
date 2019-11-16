@@ -14,11 +14,12 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
-from monitoria.settings import SECRET_KEY
+from monitoria.settings import SECRET_KEY, HEROKU_URL
 from django.test.client import Client
 import ast
 import json
 from pdf_reader.LeitorPDF import getData
+import urllib
 
 
 @api_view(["POST"])
@@ -305,3 +306,40 @@ def setStudentByData(data, pdf_url, jwt_token):
     student.save()
 
     return
+
+@api_view(["POST"])
+def get_disciplines(request):
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+
+    try:
+        user = User.objects.get(pk=user_obj['user_id'])
+        profile = Profile.objects.get(user=user)
+        student = Student.objects.get(profile=profile)
+    except (Student.DoesNotExist, Profile.DoesNotExist, User.DoesNotExist):
+        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    try:
+        response = urllib.request.urlopen(HEROKU_URL+'/discipline/?format=json')
+        data = json.loads(response.read())
+            
+        subjects_dict = {}
+        for discipline in data:
+            subjects_dict[str(discipline['code'])] = discipline
+
+        disciplines_vector = []
+        for discipline in student.academic_record:
+            disciplines_vector.append(subjects_dict[discipline[0]])
+
+        return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
+    except:
+        return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
+                        status=HTTP_400_BAD_REQUEST)
