@@ -43,9 +43,35 @@ def get_profile(request):
     serializer = ProfileSerializer(profile)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
-
 @api_view(["POST"])
 def set_profile(request):
+    jwt_token = request.data.get('token')
+    name = request.data.get('name')
+
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+    user = User.objects.get(pk=user_obj['user_id'])
+
+    if name:
+        try:
+            profile = Profile.objects.get(user=user)
+        except:
+            return Response(data={'error': 'Erro terminal: Usuario nao possui perfil'}, 
+                            status=HTTP_400_BAD_REQUEST)
+        profile.name = name
+        profile.save()
+        serializer = ProfileSerializer(profile)
+    else:
+        return Response(data={'error': 'Nome invalido'}, status=HTTP_400_BAD_REQUEST)
+
+    return Response(data=serializer.data, status=HTTP_200_OK)
+
+@api_view(["POST"])
+def create_profile(request):
     jwt_token = request.data.get('token')
     name = request.data.get('name')
     is_professor = request.data.get('is_professor')
@@ -58,29 +84,27 @@ def set_profile(request):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
-    is_professor = ast.literal_eval(is_professor)
+    if is_professor:
+        is_professor = ast.literal_eval(is_professor)
+    else:
+        return Response(data={'error': 'Parametro invalido: is_professor'}, 
+                        status=HTTP_400_BAD_REQUEST)
 
     # Obtendo profile
     if is_professor:
-        try:
-            profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            profile = Profile(user=user, is_professor=is_professor)
-            profile.save()
-            professor = Professor(profile=profile)
-            professor.save()
+        profile = Profile(user=user, is_professor=is_professor)
+        profile.save()
+        professor = Professor(profile=profile)
+        professor.save()
         if name:
             profile.name = name
         profile.save()
         serializer = ProfileSerializer(profile)
     else:
-        try:
-            profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            profile = Profile(user=user, is_professor=is_professor)
-            profile.save()
-            student = Student(profile=profile)
-            student.save()
+        profile = Profile(user=user, is_professor=is_professor)
+        profile.save()
+        student = Student(profile=profile)
+        student.save()
         if name:
             profile.name = name
         profile.save()
@@ -126,7 +150,7 @@ def registration(request):
         'is_professor': is_professor,
     }
     # Definir o perfil
-    response = client.post('/set_profile/', profile_data)
+    response = client.post('/create_profile/', profile_data)
     # Adicionar os dados do pdf ao perfil
     if not is_professor:
         setStudentByData(pdf_data, jwt_token)

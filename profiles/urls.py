@@ -9,4 +9,5 @@ urlpatterns = [
     path('professor_classes/', views.professor_classes),
     path('get_student/', views.get_student),
     path('set_student/', views.set_student),
+    path('create_profile/', views.create_profile),
 ]
