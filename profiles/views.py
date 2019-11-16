@@ -285,14 +285,13 @@ def get_disciplines(request):
         return response
     # Decodificação do usuário
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
-    user = User.objects.get(pk=user_obj['user_id'])
-
-    profile = Profile.objects.get(user=user)
 
     try:
+        user = User.objects.get(pk=user_obj['user_id'])
+        profile = Profile.objects.get(user=user)
         student = Student.objects.get(profile=profile)
-    except Student.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
+    except (Student.DoesNotExist, Profile.DoesNotExist, User.DoesNotExist):
+        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
                         status=HTTP_400_BAD_REQUEST)
 
     url = 'http://amonitoria-offers.herokuapp.com/discipline/?format=json'
@@ -309,6 +308,6 @@ def get_disciplines(request):
         disciplines_vector.append(subjects_dict[discipline[0]])
     
 
-    return Response(disciplines_vector, status=HTTP_200_OK)
+    return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
         
     
