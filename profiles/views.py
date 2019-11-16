@@ -160,7 +160,7 @@ def registration(request):
     response = client.post('/create_profile/', profile_data)
     # Adicionar os dados do pdf ao perfil
     if not is_professor and pdf_data!=None:
-        setStudentByData(pdf_data, jwt_token)
+        setStudentByData(pdf_data, pdf_url, jwt_token)
     
     return Response(data={'token': jwt_token,
                           'profile': response.data}, status=HTTP_201_CREATED)
@@ -284,7 +284,7 @@ def set_student(request):
     serializer = StudentSerializer(student)
     return Response(serializer.data, status=HTTP_200_OK)
 
-def setStudentByData(data, jwt_token):
+def setStudentByData(data, pdf_url, jwt_token):
     user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
     user = User.objects.get(pk=user_obj['user_id'])
 
@@ -295,6 +295,8 @@ def setStudentByData(data, jwt_token):
     except Student.DoesNotExist:
         return Response(data={'error': "Erro terminal: Erro durante a criação do estudante"},
                         status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    student.pdf_url = pdf_url
 
     student.matricula = data['matricula']
     student.ira = data['ira']
