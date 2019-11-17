@@ -22,8 +22,6 @@ class Class(models.Model):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, null=True)
     ranking = ArrayField(ArrayField(models.CharField(max_length=20)), default=list)
 
-
-
 class ClassRegister(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
     points = models.FloatField(default=0.0)

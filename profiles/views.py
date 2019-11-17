@@ -346,5 +346,5 @@ def get_disciplines(request):
             pass
         classes = classes.union(Class.objects.filter(discipline=discipline, period=period))
         
-    serializer = ClassSerializer(classes, many=True)
+    serializer = ClassSerializer(classes.order_by('discipline'), many=True)
     return Response(serializer.data, status=HTTP_200_OK)
