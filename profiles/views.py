@@ -321,6 +321,13 @@ def setStudentByData(data, pdf_url, jwt_token):
 @api_view(["POST"])
 def get_disciplines(request):
     jwt_token = request.data.get('token')
+    try:
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
+                        status=HTTP_400_BAD_REQUEST)
 
     # Validação do token
     client = Client()
@@ -332,31 +339,46 @@ def get_disciplines(request):
 
     try:
         user = User.objects.get(pk=user_obj['user_id'])
-        profile = Profile.objects.get(user=user)
-        student = Student.objects.get(profile=profile)
-    except (Student.DoesNotExist, Profile.DoesNotExist, User.DoesNotExist):
+        profile = Profile.objects.get(user=user) 
+    except (Profile.DoesNotExist, User.DoesNotExist):
         return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
-                        status=HTTP_400_BAD_REQUEST)
-
-    try:
-        time_now = timezone.now().date()
-        periods = Period.objects.filter(end_time__gte=time_now)
-        period = periods.get(initial_time__lte=time_now)
-    except Period.DoesNotExist:
-        return Response(data={'error': "Fora do período de inscrição"},
                         status=HTTP_400_BAD_REQUEST)
     
     data = []
 
-    for each in student.academic_record:
-        discipline_code = int(each[0])
+    if profile.is_professor:
         try:
-            discipline = Discipline.objects.get(code=discipline_code)
-        except:
-            continue
-        list_classes = Class.objects.filter(discipline=discipline, period=period)
-        list_classes = ClassSerializer(list_classes, many=True).data
-        discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
-        data.append(discipline)
+            professor = Professor.objects.get(profile=profile)
+        except Professor.DoesNotExist:
+            return Response(data={'error': "Erro terminal: Falha ao localizar professor no sistema"},
+                            status=HTTP_400_BAD_REQUEST)
+        disciplines = Discipline.objects.all()
+        for discipline in disciplines:
+            classes = Class.objects.filter(discipline=discipline, period=period)
+            list_classes = []
+            for each in classes:
+                if professor.profile.name in each.professors:
+                    list_classes.append(each)
+            if list_classes:
+                list_classes = ClassSerializer(list_classes, many=True).data
+                discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
+                data.append(discipline)
+    else:
+        try:
+            student = Student.objects.get(profile=profile)
+        except Student.DoesNotExist:
+            return Response(data={'error': "Erro terminal: Falha ao localizar aluno no sistema"},
+                            status=HTTP_400_BAD_REQUEST)
+        
+        for each in student.academic_record:
+            discipline_code = int(each[0])
+            try:
+                discipline = Discipline.objects.get(code=discipline_code)
+            except:
+                continue
+            list_classes = Class.objects.filter(discipline=discipline, period=period)
+            list_classes = ClassSerializer(list_classes, many=True).data
+            discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
+            data.append(discipline)
         
     return Response(data, status=HTTP_200_OK)
