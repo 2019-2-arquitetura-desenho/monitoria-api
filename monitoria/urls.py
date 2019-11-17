@@ -6,5 +6,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('monitoria.auth_urls')),
     path('', include('profiles.urls')),
+    path('', include('disciplines.urls')),
     url('^', include('django.contrib.auth.urls')),
 ]

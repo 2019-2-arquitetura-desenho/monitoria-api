@@ -14,13 +14,15 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
+from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
 from django.test.client import Client
 import ast
 import json
 from pdf_reader.LeitorPDF import getData
 import urllib
-
+from disciplines.serializers import ClassSerializer
+from disciplines.models import Discipline, Period, Class
 
 @api_view(["POST"])
 def get_profile(request):
@@ -99,6 +101,15 @@ def create_profile(request):
         professor.save()
         if name:
             profile.name = name
+            classes=[]
+            all_classes = Class.objects.all()
+            for each in all_classes:
+                for professor_name in each.professors:
+                    if professor_name == name:
+                        classes.append([each.discipline.code, each.name])
+            professor.classes = classes
+            professor.save()
+
         profile.save()
         serializer = ProfileSerializer(profile)
     else:
@@ -310,6 +321,13 @@ def setStudentByData(data, pdf_url, jwt_token):
 @api_view(["POST"])
 def get_disciplines(request):
     jwt_token = request.data.get('token')
+    try:
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
+                        status=HTTP_400_BAD_REQUEST)
 
     # Validação do token
     client = Client()
@@ -321,25 +339,46 @@ def get_disciplines(request):
 
     try:
         user = User.objects.get(pk=user_obj['user_id'])
-        profile = Profile.objects.get(user=user)
-        student = Student.objects.get(profile=profile)
-    except (Student.DoesNotExist, Profile.DoesNotExist, User.DoesNotExist):
+        profile = Profile.objects.get(user=user) 
+    except (Profile.DoesNotExist, User.DoesNotExist):
         return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
                         status=HTTP_400_BAD_REQUEST)
+    
+    data = []
 
-    try:
-        response = urllib.request.urlopen(HEROKU_URL+'/discipline/?format=json')
-        data = json.loads(response.read())
-            
-        subjects_dict = {}
-        for discipline in data:
-            subjects_dict[str(discipline['code'])] = discipline
-
-        disciplines_vector = []
-        for discipline in student.academic_record:
-            disciplines_vector.append(subjects_dict[discipline[0]])
-
-        return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
-    except:
-        return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
-                        status=HTTP_400_BAD_REQUEST)
+    if profile.is_professor:
+        try:
+            professor = Professor.objects.get(profile=profile)
+        except Professor.DoesNotExist:
+            return Response(data={'error': "Erro terminal: Falha ao localizar professor no sistema"},
+                            status=HTTP_400_BAD_REQUEST)
+        disciplines = Discipline.objects.all()
+        for discipline in disciplines:
+            classes = Class.objects.filter(discipline=discipline, period=period)
+            list_classes = []
+            for each in classes:
+                if professor.profile.name in each.professors:
+                    list_classes.append(each)
+            if list_classes:
+                list_classes = ClassSerializer(list_classes, many=True).data
+                discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
+                data.append(discipline)
+    else:
+        try:
+            student = Student.objects.get(profile=profile)
+        except Student.DoesNotExist:
+            return Response(data={'error': "Erro terminal: Falha ao localizar aluno no sistema"},
+                            status=HTTP_400_BAD_REQUEST)
+        
+        for each in student.academic_record:
+            discipline_code = int(each[0])
+            try:
+                discipline = Discipline.objects.get(code=discipline_code)
+            except:
+                continue
+            list_classes = Class.objects.filter(discipline=discipline, period=period)
+            list_classes = ClassSerializer(list_classes, many=True).data
+            discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
+            data.append(discipline)
+        
+    return Response(data, status=HTTP_200_OK)

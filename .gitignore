@@ -128,5 +128,7 @@ dmypy.json
 # static_files
 static_files/
 
-# Migrations
-/profiles/Migrations/*
+#Migrations
+*/migrations/
+
+tmp.pdf
