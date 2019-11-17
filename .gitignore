@@ -130,3 +130,5 @@ static_files/
 
 #Migrations
 */migrations/
+
+tmp.pdf
