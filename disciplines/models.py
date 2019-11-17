@@ -20,12 +20,9 @@ class Class(models.Model):
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)
     period = models.ForeignKey(Period, on_delete=models.CASCADE, null=True)
-    ranking = ArrayField(ArrayField(models.CharField(max_length=20)), default=list)
-
-
 
 class ClassRegister(models.Model):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
     points = models.FloatField(default=0.0)
     discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     indication = models.FloatField(null=True, blank=True)

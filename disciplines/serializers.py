@@ -15,7 +15,6 @@ class ClassSerializer(serializers.Serializer):
     discipline = DisciplineSerializer()
     professors = serializers.ListField()
     period = PeriodSerializer()
-    ranking = serializers.ListField()
 
 class ClassRegisterSerializer(serializers.Serializer):
     student = StudentSerializer()
