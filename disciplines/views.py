@@ -16,6 +16,7 @@ import json
 import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
+from datetime import date, datetime
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
@@ -46,6 +47,28 @@ def create_period(request):
     initial_time = request.data.get('initial_time')
     end_time = request.data.get('end_time')
 
+    if not initial_time or not end_time:
+        return Response(data={'error': "Parametros obrigatorios: initial_time, end_time"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    try:
+        initial_time = datetime.strptime(initial_time, '%Y-%m-%d').date()
+        end_time = datetime.strptime(end_time, '%Y-%m-%d').date()
+    except:
+        return Response(data={'error': "Parametros invalidos: initial_time, end_time"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    if initial_time >= end_time:
+        return Response(data={'error': "Periodo invalido (final <= inicio)"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    conflict_periods = Period.objects.all()
+    for period in conflict_periods:
+        if  ((period.initial_time <= initial_time and period.end_time >= initial_time)
+            or
+            (period.initial_time >= initial_time and period.initial_time <= end_time)):
+            return Response(data={'error': "Periodos nao podem existir simultaneamente"})
+
     # Colocar as disciplinas neste periodo
     try:
         response = urllib.request.urlopen(HEROKU_URL+'/discipline/?format=json')
@@ -54,12 +77,7 @@ def create_period(request):
         return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
                         status=HTTP_400_BAD_REQUEST)
 
-    period = Period()
-    if initial_time:
-        period.initial_time=initial_time
-    if end_time:
-        period.end_time=end_time
-
+    period = Period(initial_time=initial_time, end_time=end_time)
     period.save()
 
     for discipline in data:
@@ -118,13 +136,15 @@ def register_discipline(request):
 
     try:
         class_register = ClassRegister.objects.filter(discipline_class=temp_class).get(student=student)
-        return Response(data={'error': "Estudante ja esta cadastrado na turma"}, status=HTTP_400_BAD_REQUEST)
+        return Response(data={'error': "Estudante ja esta cadastrado na turma"},
+                        status=HTTP_400_BAD_REQUEST)
     except ClassRegister.DoesNotExist:
         class_register = ClassRegister(student=student, discipline_class=temp_class)
         try:
             calculate_points(class_register)
         except RegisterException:
-            return Response(data={'error': "Estudante não cursou a materia"}, status=HTTP_400_BAD_REQUEST)
+            return Response(data={'error': "Estudante não cursou a materia"},
+                            status=HTTP_400_BAD_REQUEST)
         class_register.save()
         serializer = ClassRegisterSerializer(class_register)
         return Response(data=serializer.data, status=HTTP_200_OK)
