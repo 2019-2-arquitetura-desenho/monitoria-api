@@ -23,6 +23,7 @@ class Meeting(models.Model):
 class Class(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=250, default='')
+    vacancies = models.IntegerField(default=0)
     shift = models.CharField(max_length=40, default='')
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)

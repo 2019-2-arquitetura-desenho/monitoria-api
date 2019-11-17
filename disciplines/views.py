@@ -200,7 +200,7 @@ def get_winners(request):
     classes = Class.objects.all()
     vacancies = {}
     for eatch in classes:
-        vacancies[eatch.id] = 2
+        vacancies[eatch.id] = int(eatch.vacancies*0.1) # Vagas para monitor 10%
 
     # Estudantes escolhidos
     students = Student.objects.all()
