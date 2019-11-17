@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from datetime import timedelta
 from django.utils import timezone
+from profiles.models import Student
 
 class Discipline(models.Model):
     code = models.IntegerField(primary_key=True)
@@ -18,5 +19,14 @@ class Class(models.Model):
     shift = models.CharField(max_length=40, default='')
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)
-    period = models.ForeignKey(Period, on_delete=models.CASCADE)
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, null=True)
     ranking = ArrayField(ArrayField(models.CharField(max_length=20)), default=list)
+
+
+
+class ClassRegister(models.Model):
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
+    points = models.FloatField(default=0.0)
+    discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    indication = models.FloatField(null=True, blank=True)
+    priority = models.IntegerField(default=1)

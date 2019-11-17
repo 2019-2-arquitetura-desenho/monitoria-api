@@ -6,8 +6,8 @@ from rest_framework.status import (
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
 )
-from disciplines.models import Class, Discipline, Period
-from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer
+from disciplines.models import Class, Discipline, Period, ClassRegister
+from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer
 from rest_framework import viewsets
 from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
@@ -116,27 +116,36 @@ def register_discipline(request):
         return Response(data={'error': "Erro terminal: Falha ao localizar turmas"},
                         status=HTTP_400_BAD_REQUEST)
 
-    for each in temp_class.ranking:
-        if each[1]==student.matricula:
-            return Response(data={'error': "Estudante ja esta cadastrado na turma"},
-                        status=HTTP_400_BAD_REQUEST)
+    try:
+        class_register = ClassRegister.objects.filter(discipline_class=temp_class).get(student=student)
+        return Response(data={'error': "Estudante ja esta cadastrado na turma"}, status=HTTP_400_BAD_REQUEST)
+    except ClassRegister.DoesNotExist:
+        class_register = ClassRegister(student=student, discipline_class=temp_class)
+        try:
+            calculate_points(class_register)
+        except RegisterException:
+            return Response(data={'error': "Estudante não cursou a materia"}, status=HTTP_400_BAD_REQUEST)
+        class_register.save()
+        serializer = ClassRegisterSerializer(class_register)
+        return Response(data=serializer.data, status=HTTP_200_OK)
+        
 
-    for each in student.academic_record:
-        if each[0]==str(discipline.code):
-            # COMO EU CALCULO ISSO
-            values = {
-                "SS": 5,
-                "MS": 4,
-                "MM": 3,
-            }
-            value = (values[each[1]]*0.6) + (student.ira*0.4)
-            value = str(value)
-            temp_class.ranking.append([value, student.matricula])
-            temp_class.save()
-            serializer = ClassSerializer(temp_class)
-            return Response(data=serializer.data, status=HTTP_200_OK)
-
-    return Response(data={'error': "Erro terminal: Estudante nao realizou esta disciplina"},
-                        status=HTTP_400_BAD_REQUEST)
+class RegisterException(Exception):
+    pass
+def calculate_points(class_register):
+    values = {
+        "SS": 5.0,
+        "MS": 4.0,
+        "MM": 3.0,
+    }
+    for each in class_register.student.academic_record:
+        if each[0]==str(class_register.discipline_class.discipline.code):
+            if class_register.indication==None:
+                class_register.points = (values[each[1]]*0.6) + (class_register.student.ira*0.4)
+            else:
+                class_register.points = (values[each[1]]*0.3) + (class_register.student.ira*0.2)+(class_register.indication*0.5)
+            class_register.save()
+            return 
+    raise RegisterException("Estudante não cadastrado na disciplina")
 
     
