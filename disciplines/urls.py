@@ -14,4 +14,5 @@ urlpatterns = [
     path('remove_professor/', views.remove_professor),
     path('create_period/', views.create_period),
     path('register_discipline/', views.register_discipline),
+    path('get_winners/', views.get_winners),
 ]

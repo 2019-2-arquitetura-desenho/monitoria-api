@@ -7,7 +7,7 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
 )
 from disciplines.models import Class, Discipline, Period, ClassRegister, Meeting
-from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer
+from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer, ClassRegisterShortSerializer
 from rest_framework import viewsets
 from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
@@ -194,4 +194,50 @@ def calculate_points(class_register):
             return 
     raise RegisterException("Estudante não cadastrado na disciplina")
 
+@api_view(["GET"])
+def get_winners(request):
+    # Vagas por disciplina
+    classes = Class.objects.all()
+    vacancies = {}
+    for eatch in classes:
+        vacancies[eatch.id] = 2
+
+    # Estudantes escolhidos
+    students = Student.objects.all()
+    print('students', students)
+    chose_student = {}
+    for eatch in students:
+        chose_student[eatch.matricula] = False
+
     
+    data = ClassRegister.objects.order_by('priority', '-points')
+    registers = []
+    for eatch in data:
+        registers.append(eatch)
+    print('registers', registers)
+    i = 0
+    ans = []
+    while registers:
+        print('Start over qrst', len(registers))
+        if i>=len(registers):
+            break
+        register = registers[i]
+        student_id = register.student.matricula
+        class_id = register.discipline_class.id
+        if chose_student[student_id]:
+            print('Student alredy chosen ', student_id)
+            registers.pop(i)
+            i = 0
+        elif vacancies[class_id]:
+            print('Student chosen ', student_id)
+            res = ClassRegister.objects.get(student=register.student)
+            ans.append(res)
+            vacancies[class_id]-=1
+            chose_student[student_id]=True
+            registers.pop(i)
+            i = 0
+        else:
+            i+=1
+    #print('ans', ans)
+    serializer = ClassRegisterShortSerializer(ans, many=True)
+    return Response(data=serializer.data, status=HTTP_200_OK)

@@ -33,3 +33,7 @@ class ClassRegisterSerializer(serializers.Serializer):
     discipline_class = ClassShortSerializer()
     indication = serializers.FloatField()
     priority = serializers.IntegerField()
+
+class ClassRegisterShortSerializer(serializers.Serializer):
+    student = StudentShortSerializer()
+    discipline_class = ClassShortSerializer()
