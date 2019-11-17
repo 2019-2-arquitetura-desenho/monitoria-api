@@ -13,8 +13,14 @@ class ProfileSerializer(serializers.Serializer):
     user = UserSerializer()
     name = serializers.CharField()
     is_professor = serializers.BooleanField()
-    
 
+class ProfileShortSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    
+class StudentShortSerializer(serializers.Serializer):
+    matricula = serializers.CharField()
+    profile = ProfileShortSerializer()
+    
 class StudentSerializer(serializers.Serializer):
     matricula = serializers.CharField()
     ira = serializers.FloatField()

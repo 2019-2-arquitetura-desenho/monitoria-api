@@ -6,8 +6,8 @@ from rest_framework.status import (
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
 )
-from disciplines.models import Class, Discipline, Period, ClassRegister
-from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer
+from disciplines.models import Class, Discipline, Period, ClassRegister, Meeting
+from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer, ClassRegisterShortSerializer
 from rest_framework import viewsets
 from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
@@ -91,9 +91,25 @@ def create_period(request):
             temp_class.professors = []
             for professor in each['teachers']:
                 temp_class.professors.append(professor['name'])
-
+            meetings_list = []
+            for meet in each['meetings']:
+                try:
+                    meeting = Meeting.objects.get(
+                        day=meet['day'], init_hour=meet['init_hour'], 
+                        final_hour=meet['final_hour'], room=meet['room']
+                    )
+                    meeting.save()
+                except Meeting.DoesNotExist:
+                    meeting = Meeting.objects.create(
+                        day=meet['day'], init_hour=meet['init_hour'], 
+                        final_hour=meet['final_hour'], room=meet['room']
+                    )
+                    meeting.save()
+                meetings_list.append(meeting)
             temp_class.discipline = temp_discipline
             temp_class.period = period
+            temp_class.save()
+            temp_class.meetings.set(meetings_list)
             temp_class.save()
     
     serializer = PeriodSerializer(period)
@@ -253,3 +269,50 @@ def get_student_rankings(request):
         data['data'].append(response.data)
 
     return Response(data=data, status=HTTP_200_OK)
+@api_view(["GET"])
+def get_winners(request):
+    # Vagas por disciplina
+    classes = Class.objects.all()
+    vacancies = {}
+    for eatch in classes:
+        vacancies[eatch.id] = int(eatch.vacancies*0.1) # Vagas para monitor 10%
+
+    # Estudantes escolhidos
+    students = Student.objects.all()
+    print('students', students)
+    chose_student = {}
+    for eatch in students:
+        chose_student[eatch.matricula] = False
+
+    
+    data = ClassRegister.objects.order_by('priority', '-points')
+    registers = []
+    for eatch in data:
+        registers.append(eatch)
+    print('registers', registers)
+    i = 0
+    ans = []
+    while registers:
+        print('Start over qrst', len(registers))
+        if i>=len(registers):
+            break
+        register = registers[i]
+        student_id = register.student.matricula
+        class_id = register.discipline_class.id
+        if chose_student[student_id]:
+            print('Student alredy chosen ', student_id)
+            registers.pop(i)
+            i = 0
+        elif vacancies[class_id]:
+            print('Student chosen ', student_id)
+            res = ClassRegister.objects.get(student=register.student)
+            ans.append(res)
+            vacancies[class_id]-=1
+            chose_student[student_id]=True
+            registers.pop(i)
+            i = 0
+        else:
+            i+=1
+    #print('ans', ans)
+    serializer = ClassRegisterShortSerializer(ans, many=True)
+    return Response(data=serializer.data, status=HTTP_200_OK)
