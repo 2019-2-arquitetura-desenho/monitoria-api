@@ -16,11 +16,7 @@ import json
 import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
-<<<<<<< HEAD
 from datetime import date, datetime
-=======
-import datetime
->>>>>>> 42564f328b6f86ba06027ff63aa6b0f608067def
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()

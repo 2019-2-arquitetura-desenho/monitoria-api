@@ -20,6 +20,7 @@ import ast
 import json
 from pdf_reader.LeitorPDF import getData
 import urllib
+from disciplines.models import Class
 
 
 @api_view(["POST"])
@@ -99,6 +100,15 @@ def create_profile(request):
         professor.save()
         if name:
             profile.name = name
+            classes=[]
+            all_classes = Class.objects.all()
+            for each in all_classes:
+                for professor_name in each.professors:
+                    if professor_name == name:
+                        classes.append([each.discipline.code, each.name])
+            professor.classes = classes
+            professor.save()
+
         profile.save()
         serializer = ProfileSerializer(profile)
     else:
