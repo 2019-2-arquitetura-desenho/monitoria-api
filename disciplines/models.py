@@ -28,10 +28,13 @@ class Class(models.Model):
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)
     period = models.ForeignKey(Period, on_delete=models.CASCADE, null=True)
+<<<<<<< HEAD
+=======
     meetings = models.ManyToManyField(Meeting)
+>>>>>>> 588d5d8468f5dcefa43f9619b7872e5233ad1eac
 
 class ClassRegister(models.Model):
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
     points = models.FloatField(default=0.0)
     discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     indication = models.FloatField(null=True, blank=True)

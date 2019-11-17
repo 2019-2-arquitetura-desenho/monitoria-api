@@ -10,9 +10,10 @@ urlpatterns = [
     path('', include(router.urls)),
     path('get_discipline/', views.get_discipline),
     path('add_professor/', views.add_professor),
-    path('get_professor/', views.get_professor),
     path('remove_professor/', views.remove_professor),
     path('create_period/', views.create_period),
     path('register_discipline/', views.register_discipline),
-    path('calculate_winners/', views.calculate_winners),
+    path('get_class_ranking/', views.get_class_ranking),
+    path('get_student_rankings/', views.get_student_rankings),
+    path('calculate_winners/', views.get_winners),
 ]

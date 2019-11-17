@@ -35,10 +35,6 @@ def add_professor(request):
     pass
 
 @api_view(["POST"])
-def get_professor(request):
-    pass
-
-@api_view(["POST"])
 def remove_professor(request):
     pass
 
@@ -195,6 +191,86 @@ def calculate_points(class_register):
     raise RegisterException("Estudante não cadastrado na disciplina")
 
 @api_view(["POST"])
+def get_class_ranking(request):
+    discipline_code = request.data.get('discipline_code')
+    class_name = request.data.get('class_name')
+
+    if not discipline_code or not class_name:
+        return Response(data={'error': "Parametros obrigatorios: discipline_code, class_name"})
+
+    discipline = Discipline.objects.get(code=discipline_code)
+
+    try:
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    discipline_class = Class.objects.get(discipline=discipline, name=class_name, period=period)
+
+    ranking = []
+    registrations = ClassRegister.objects.filter(discipline_class=discipline_class)
+
+    discipline_name = discipline.name
+    for register in registrations:
+        temp_name = register.student.profile.name
+        temp_matricula = register.student.matricula
+        temp_points = register.points
+        ranking.append([temp_points, temp_matricula, temp_name])
+
+    sorted(ranking)
+    for each in ranking:
+        each[0], each[2] = each[2], each[0]
+
+    data = {'materia': discipline_name,
+            'ranking': ranking}
+
+    return Response(data=data, status=HTTP_200_OK)
+
+@api_view(["POST"])
+def get_student_rankings(request):
+    jwt_token = request.data.get('token')
+
+    # Validação do token
+    client = Client()
+    response = client.post('/token_verify/', request.data)
+    if response.status_code != HTTP_200_OK:
+        return response
+    # Decodificação do usuário
+    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
+
+    try:
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(pk=user_obj['user_id'])
+        profile = Profile.objects.get(user=user)
+        student = Student.objects.get(profile=profile)
+        registers = ClassRegister.objects.filter(student=student)
+    except (Student.DoesNotExist, User.DoesNotExist, Profile.DoesNotExist):
+        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    data = {'data': []}
+    client = Client()
+    for register in registers:
+        if register.discipline_class.period != period:
+            continue
+        body = {'discipline_code': register.discipline_class.discipline.code,
+                'class_name': register.discipline_class.name}
+        response = client.post('/get_class_ranking/', body)
+        data['data'].append(response.data)
+
+    return Response(data=data, status=HTTP_200_OK)
+    
+@api_view(["GET"])
 def calculate_winners(request):
     # Vagas por disciplina
     time_now = request.data.get('date')
