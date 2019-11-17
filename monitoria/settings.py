@@ -137,6 +137,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
+    'http://monitoria-app.herokuapp.com'
 )
 
 ROOT_URLCONF = 'monitoria.urls'
