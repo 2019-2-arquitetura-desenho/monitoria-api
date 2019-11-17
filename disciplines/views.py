@@ -16,11 +16,7 @@ import json
 import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
-<<<<<<< HEAD
 from datetime import date, datetime
-=======
-import datetime
->>>>>>> 42564f328b6f86ba06027ff63aa6b0f608067def
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
@@ -83,9 +79,11 @@ def create_period(request):
 
     period = Period(initial_time=initial_time, end_time=end_time)
     period.save()
-
     for discipline in data:
-        temp_discipline = Discipline()
+        try:
+            temp_discipline = Discipline.objects.get(code=discipline['code'])
+        except Discipline.DoesNotExist:
+            temp_discipline = Discipline()
         temp_discipline.name = discipline['name']
         temp_discipline.code = discipline['code']
         temp_discipline.save()
@@ -101,7 +99,7 @@ def create_period(request):
             temp_class.discipline = temp_discipline
             temp_class.period = period
             temp_class.save()
-
+    
     serializer = PeriodSerializer(period)
     return Response(data=serializer.data, status=HTTP_200_OK)
 
