@@ -9,18 +9,25 @@ class Discipline(models.Model):
     name = models.CharField(max_length=250, default='')
 
 class Period(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True, unique=True)
     initial_time = models.DateField(default=timezone.now().date())
     end_time = models.DateField(default=timezone.now().date()+timedelta(days=30))   
 
+class Meeting(models.Model):
+    id = models.AutoField(primary_key=True, unique=True)
+    day = models.CharField(max_length=250)
+    init_hour = models.CharField(max_length=250)
+    final_hour = models.CharField(max_length=250)
+    room = models.CharField(max_length=250)
+
 class Class(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=250, default='')
     shift = models.CharField(max_length=40, default='')
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
     professors = ArrayField(models.CharField(max_length=250), default=list)
     period = models.ForeignKey(Period, on_delete=models.CASCADE, null=True)
-    ranking = ArrayField(ArrayField(models.CharField(max_length=20)), default=list)
+    meetings = models.ManyToManyField(Meeting)
 
 class ClassRegister(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
@@ -28,3 +35,4 @@ class ClassRegister(models.Model):
     discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     indication = models.FloatField(null=True, blank=True)
     priority = models.IntegerField(default=1)
+

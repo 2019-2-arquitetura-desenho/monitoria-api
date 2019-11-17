@@ -6,7 +6,7 @@ from rest_framework.status import (
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
 )
-from disciplines.models import Class, Discipline, Period, ClassRegister
+from disciplines.models import Class, Discipline, Period, ClassRegister, Meeting
 from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer
 from rest_framework import viewsets
 from django.utils import timezone
@@ -95,9 +95,25 @@ def create_period(request):
             temp_class.professors = []
             for professor in each['teachers']:
                 temp_class.professors.append(professor['name'])
-
+            meetings_list = []
+            for meet in each['meetings']:
+                try:
+                    meeting = Meeting.objects.get(
+                        day=meet['day'], init_hour=meet['init_hour'], 
+                        final_hour=meet['final_hour'], room=meet['room']
+                    )
+                    meeting.save()
+                except Meeting.DoesNotExist:
+                    meeting = Meeting.objects.create(
+                        day=meet['day'], init_hour=meet['init_hour'], 
+                        final_hour=meet['final_hour'], room=meet['room']
+                    )
+                    meeting.save()
+                meetings_list.append(meeting)
             temp_class.discipline = temp_discipline
             temp_class.period = period
+            temp_class.save()
+            temp_class.meetings.set(meetings_list)
             temp_class.save()
     
     serializer = PeriodSerializer(period)
