@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from profiles.serializers import StudentSerializer
+from profiles.serializers import StudentShortSerializer
 
 class DisciplineSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -23,9 +23,13 @@ class ClassSerializer(serializers.Serializer):
     #period = PeriodSerializer()
     meetings = MeetingSerializer(many=True)
 
+class ClassShortSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    discipline = DisciplineSerializer()
+
 class ClassRegisterSerializer(serializers.Serializer):
-    student = StudentSerializer()
+    student = StudentShortSerializer()
     points = serializers.FloatField()
-    discipline_class = ClassSerializer()
+    discipline_class = ClassShortSerializer()
     indication = serializers.FloatField()
     priority = serializers.IntegerField()
