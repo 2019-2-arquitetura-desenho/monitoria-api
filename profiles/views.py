@@ -337,14 +337,17 @@ def get_disciplines(request):
         return Response(data={'error': "Fora do período de inscrição"},
                         status=HTTP_400_BAD_REQUEST)
     
-    classes = Class.objects.none()
+    data = []
+
     for each in student.academic_record:
-        discipline_code = each[0]
+        discipline_code = int(each[0])
         try:
             discipline = Discipline.objects.get(code=discipline_code)
         except:
-            pass
-        classes = classes.union(Class.objects.filter(discipline=discipline, period=period))
+            continue
+        list_classes = Class.objects.filter(discipline=discipline, period=period)
+        list_classes = ClassSerializer(list_classes, many=True).data
+        discipline = { 'name': discipline.name, 'code':discipline.code, 'discipline_class':list_classes }
+        data.append(discipline)
         
-    serializer = ClassSerializer(classes.order_by('discipline'), many=True)
-    return Response(serializer.data, status=HTTP_200_OK)
+    return Response(data, status=HTTP_200_OK)
