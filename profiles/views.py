@@ -14,14 +14,15 @@ from profiles.serializers import (
     StudentSerializer,
 )
 import jwt
+from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
 from django.test.client import Client
 import ast
 import json
 from pdf_reader.LeitorPDF import getData
 import urllib
-from disciplines.models import Class
-
+from disciplines.serializers import ClassSerializer
+from disciplines.models import Discipline, Period, Class
 
 @api_view(["POST"])
 def get_profile(request):
@@ -338,18 +339,21 @@ def get_disciplines(request):
                         status=HTTP_400_BAD_REQUEST)
 
     try:
-        response = urllib.request.urlopen(HEROKU_URL+'/discipline/?format=json')
-        data = json.loads(response.read())
-            
-        subjects_dict = {}
-        for discipline in data:
-            subjects_dict[str(discipline['code'])] = discipline
-
-        disciplines_vector = []
-        for discipline in student.academic_record:
-            disciplines_vector.append(subjects_dict[discipline[0]])
-
-        return Response({'disciplines':disciplines_vector}, status=HTTP_200_OK)
-    except:
-        return Response(data={'error': "Erro terminal: Erro durante a comunicação com o Crawler"},
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
                         status=HTTP_400_BAD_REQUEST)
+    
+    classes = Class.objects.none()
+    for each in student.academic_record:
+        discipline_code = each[0]
+        try:
+            discipline = Discipline.objects.get(code=discipline_code)
+        except:
+            pass
+        classes = classes.union(Class.objects.filter(discipline=discipline, period=period))
+        
+    serializer = ClassSerializer(classes.order_by('discipline'), many=True)
+    return Response(serializer.data, status=HTTP_200_OK)
