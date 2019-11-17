@@ -313,7 +313,7 @@ def indicate_student(request):
         return Response(data={'error': "Professor foi não localizado nesta classe"},
                         status=HTTP_400_BAD_REQUEST)
     register.indication = points
-    calculate_points(register)
+    register.points = register.points/2 + (points*0.5)
     register.save()
     serializer = ClassRegisterSerializer(register)
     return Response(data=serializer.data, status=HTTP_200_OK)
