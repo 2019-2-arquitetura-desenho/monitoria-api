@@ -16,6 +16,7 @@ import json
 import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
+import datetime
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
@@ -105,13 +106,21 @@ def register_discipline(request):
                         status=HTTP_400_BAD_REQUEST)
 
     try:
+        time_now = timezone.now().date()
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Fora do período de inscrição"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    try:
         discipline = Discipline.objects.get(code=discipline_code)
     except:
         return Response(data={'error': "Erro terminal: Falha ao localizar disciplina"},
                         status=HTTP_400_BAD_REQUEST)
 
     try:
-        temp_class = Class.objects.filter(discipline=discipline).get(name=class_name)
+        temp_class = Class.objects.filter(discipline=discipline, period=period).get(name=class_name)
     except:
         return Response(data={'error': "Erro terminal: Falha ao localizar turmas"},
                         status=HTTP_400_BAD_REQUEST)
@@ -128,7 +137,7 @@ def register_discipline(request):
         class_register.save()
         serializer = ClassRegisterSerializer(class_register)
         return Response(data=serializer.data, status=HTTP_200_OK)
-        
+
 
 class RegisterException(Exception):
     pass
