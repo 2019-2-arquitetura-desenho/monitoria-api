@@ -194,14 +194,24 @@ def calculate_points(class_register):
             return 
     raise RegisterException("Estudante não cadastrado na disciplina")
 
-@api_view(["GET"])
-def get_winners(request):
+@api_view(["POST"])
+def calculate_winners(request):
     # Vagas por disciplina
-    classes = Class.objects.all()
+    time_now = request.data.get('date')
+    try:
+        periods = Period.objects.filter(end_time__gte=time_now)
+        period = periods.get(initial_time__lte=time_now)
+    except Period.DoesNotExist:
+        return Response(data={'error': "Falha ao localizar periodo de monitoria"},
+                        status=HTTP_400_BAD_REQUEST)
+    print('period', period)
+    classes = Class.objects.filter(period=period)
+    data = ClassRegister.objects.filter(discipline_class__in=classes)
+    print('classes', classes)
     vacancies = {}
     for eatch in classes:
         vacancies[eatch.id] = int(eatch.vacancies*0.1) # Vagas para monitor 10%
-
+    print('data', data)
     # Estudantes escolhidos
     students = Student.objects.all()
     print('students', students)
@@ -210,7 +220,7 @@ def get_winners(request):
         chose_student[eatch.matricula] = False
 
     
-    data = ClassRegister.objects.order_by('priority', '-points')
+    data = data.order_by('priority', '-points')
     registers = []
     for eatch in data:
         registers.append(eatch)
@@ -231,6 +241,8 @@ def get_winners(request):
         elif vacancies[class_id]:
             print('Student chosen ', student_id)
             res = ClassRegister.objects.get(student=register.student)
+            res.approved = True
+            res.save()
             ans.append(res)
             vacancies[class_id]-=1
             chose_student[student_id]=True

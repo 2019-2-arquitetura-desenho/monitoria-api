@@ -11,7 +11,7 @@ class Discipline(models.Model):
 class Period(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     initial_time = models.DateField(default=timezone.now().date())
-    end_time = models.DateField(default=timezone.now().date()+timedelta(days=30))   
+    end_time = models.DateField(default=timezone.now().date()+timedelta(days=30))
 
 class Meeting(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
@@ -36,4 +36,5 @@ class ClassRegister(models.Model):
     discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     indication = models.FloatField(null=True, blank=True)
     priority = models.IntegerField(default=1)
+    approved = models.BooleanField(default=False)
 
