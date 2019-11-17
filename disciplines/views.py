@@ -7,7 +7,14 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
 )
 from disciplines.models import Class, Discipline, Period, ClassRegister, Meeting
-from disciplines.serializers import ClassSerializer, DisciplineSerializer, PeriodSerializer, ClassRegisterSerializer, ClassRegisterShortSerializer
+from disciplines.serializers import (
+    ClassSerializer, 
+    DisciplineSerializer, 
+    PeriodSerializer, 
+    ClassRegisterSerializer, 
+    ClassRegisterShortSerializer,
+    MeetingSerializer
+)
 from rest_framework import viewsets
 from django.utils import timezone
 from monitoria.settings import SECRET_KEY, HEROKU_URL
@@ -17,6 +24,7 @@ import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
 from datetime import date, datetime
+from profiles.helpers import get_user
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
@@ -120,6 +128,7 @@ def register_discipline(request):
     jwt_token = request.data.get('token')
     discipline_code = request.data.get('discipline_code')
     class_name = request.data.get('class_name')
+    priority = request.data.get('priority')
     # Validação do token
     client = Client()
     response = client.post('/token_verify/', request.data)
@@ -158,18 +167,20 @@ def register_discipline(request):
 
     try:
         class_register = ClassRegister.objects.filter(discipline_class=temp_class).get(student=student)
-        return Response(data={'error': "Estudante ja esta cadastrado na turma"},
-                        status=HTTP_400_BAD_REQUEST)
+        # return Response(data={'error': "Estudante ja esta cadastrado na turma"},
+        #                 status=HTTP_400_BAD_REQUEST)
     except ClassRegister.DoesNotExist:
         class_register = ClassRegister(student=student, discipline_class=temp_class)
-        try:
-            calculate_points(class_register)
-        except RegisterException:
-            return Response(data={'error': "Estudante não cursou a materia"},
-                            status=HTTP_400_BAD_REQUEST)
-        class_register.save()
-        serializer = ClassRegisterSerializer(class_register)
-        return Response(data=serializer.data, status=HTTP_200_OK)
+    if priority:
+        class_register.priority = priority
+    try:
+        calculate_points(class_register)
+    except RegisterException:
+        return Response(data={'error': "Estudante não cursou a materia"},
+                        status=HTTP_400_BAD_REQUEST)
+    class_register.save()
+    serializer = ClassRegisterSerializer(class_register)
+    return Response(data=serializer.data, status=HTTP_200_OK)
 
 
 class RegisterException(Exception):
@@ -232,25 +243,28 @@ def get_class_ranking(request):
 @api_view(["POST"])
 def get_student_rankings(request):
     jwt_token = request.data.get('token')
-
-    # Validação do token
-    client = Client()
-    response = client.post('/token_verify/', request.data)
-    if response.status_code != HTTP_200_OK:
+    response, user = get_user(jwt_token)
+    if response.status_code!=HTTP_200_OK:
         return response
-    # Decodificação do usuário
-    user_obj = jwt.decode(jwt_token, SECRET_KEY, algorithms=['HS256'])
 
+    final_rank = False
+    time_now = timezone.now().date()
     try:
-        time_now = timezone.now().date()
         periods = Period.objects.filter(end_time__gte=time_now)
         period = periods.get(initial_time__lte=time_now)
     except Period.DoesNotExist:
-        return Response(data={'error': "Fora do período de inscrição"},
-                        status=HTTP_400_BAD_REQUEST)
+        try:
+            period = Period.objects.order_by('-end_time').get()
+            final_rank = True
+            client = Client()
+            response = client.post('/calculate_winners/', {'date':period.initial_time})
+            if response.status_code!=HTTP_200_OK:
+                return response
+        except Period.DoesNotExist:
+            return Response(data={'error': "Nenhum processo de monitoria encontrado"},
+                            status=HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(pk=user_obj['user_id'])
         profile = Profile.objects.get(user=user)
         student = Student.objects.get(profile=profile)
         registers = ClassRegister.objects.filter(student=student)
@@ -258,19 +272,44 @@ def get_student_rankings(request):
         return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
                         status=HTTP_400_BAD_REQUEST)
 
-    data = {'data': []}
-    client = Client()
+    classes = Class.objects.filter(period=period)
+    registers = ClassRegister.objects.filter(discipline_class__in=classes, student=student)
+    data = []
     for register in registers:
-        if register.discipline_class.period != period:
-            continue
-        body = {'discipline_code': register.discipline_class.discipline.code,
-                'class_name': register.discipline_class.name}
-        response = client.post('/get_class_ranking/', body)
-        data['data'].append(response.data)
+        ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('points')
+        ranking = ClassRegisterShortSerializer(ranking, many=True).data
+        discipline = register.discipline_class.discipline 
+        discipline_data = {}
+        discipline_data['discipline'] = discipline.name
+        discipline_data['class'] = register.discipline_class.name
+        discipline_data['ranking'] = ranking
+        data.append(discipline_data)
 
     return Response(data=data, status=HTTP_200_OK)
-    
+
 @api_view(["GET"])
+def indicate_student(request):
+    jwt_token = request.data.get('token')
+    response, user = get_user(jwt_token)
+    if response.status_code!=HTTP_200_OK:
+        return response
+    try:
+        profile = Profile.objects.get(user=user) 
+    except Profile.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
+                        status=HTTP_400_BAD_REQUEST)
+    if not profile.is_professor:
+        return Response(data={'error': "Erro terminal: Usuário nao e um professor"},
+                        status=HTTP_400_BAD_REQUEST)
+    try:
+        professor = Professor.objects.get(profile=profile)
+    except Professor.DoesNotExist:
+        return Response(data={'error': "Erro terminal: Falha ao localizar professor no sistema"},
+                        status=HTTP_400_BAD_REQUEST)
+
+    return Response(data={}, status=HTTP_200_OK)
+    
+@api_view(["POST"])
 def calculate_winners(request):
     # Vagas por disciplina
     time_now = request.data.get('date')
@@ -312,20 +351,24 @@ def calculate_winners(request):
         class_id = register.discipline_class.id
         if chose_student[student_id]:
             print('Student alredy chosen ', student_id)
+            register.status = 'Reprovado'
+            register.save()
             registers.pop(i)
             i = 0
         elif vacancies[class_id]:
             print('Student chosen ', student_id)
-            res = ClassRegister.objects.get(student=register.student)
-            res.approved = True
-            res.save()
-            ans.append(res)
+            register.status = 'Aprovado'
+            register.save()
+            ans.append(register)
             vacancies[class_id]-=1
             chose_student[student_id]=True
             registers.pop(i)
             i = 0
         else:
             i+=1
+    for retister in registers:
+        register.status = 'Reprovado'
+        register.save()
     #print('ans', ans)
     serializer = ClassRegisterShortSerializer(ans, many=True)
     return Response(data=serializer.data, status=HTTP_200_OK)

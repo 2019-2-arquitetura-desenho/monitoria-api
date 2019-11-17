@@ -31,10 +31,11 @@ class Class(models.Model):
     meetings = models.ManyToManyField(Meeting)
 
 class ClassRegister(models.Model):
+    id = models.AutoField(primary_key=True, unique=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     points = models.FloatField(default=0.0)
     discipline_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     indication = models.FloatField(null=True, blank=True)
     priority = models.IntegerField(default=1)
-    approved = models.BooleanField(default=False)
+    status = models.CharField(max_length=50, default='Indefinido')
 

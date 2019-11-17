@@ -16,4 +16,5 @@ urlpatterns = [
     path('get_class_ranking/', views.get_class_ranking),
     path('get_student_rankings/', views.get_student_rankings),
     path('calculate_winners/', views.calculate_winners),
+    path('indicate_student/', views.indicate_student),
 ]

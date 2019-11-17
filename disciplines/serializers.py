@@ -28,6 +28,7 @@ class ClassShortSerializer(serializers.Serializer):
     discipline = DisciplineSerializer()
 
 class ClassRegisterSerializer(serializers.Serializer):
+    id = serializers.ReadOnlyField()
     student = StudentShortSerializer()
     points = serializers.FloatField()
     discipline_class = ClassShortSerializer()
@@ -36,4 +37,5 @@ class ClassRegisterSerializer(serializers.Serializer):
 
 class ClassRegisterShortSerializer(serializers.Serializer):
     student = StudentShortSerializer()
-    discipline_class = ClassShortSerializer()
+    points = serializers.FloatField()
+    status = serializers.CharField()
