@@ -36,18 +36,6 @@ class DisciplineViewSet(viewsets.ModelViewSet):
     serializer_class = DisciplineSerializer
 
 @api_view(["POST"])
-def get_discipline(request):
-    pass
-
-@api_view(["POST"])
-def add_professor(request):
-    pass
-
-@api_view(["POST"])
-def remove_professor(request):
-    pass
-
-@api_view(["POST"])
 def create_period(request):
     initial_time = request.data.get('initial_time')
     end_time = request.data.get('end_time')
@@ -294,27 +282,41 @@ def get_rankings(request):
 
     return Response(data=data, status=HTTP_200_OK)
 
-@api_view(["GET"])
+@api_view(["POST"])
 def indicate_student(request):
     jwt_token = request.data.get('token')
-    response, user = get_user(jwt_token)
+    register_id = request.data.get('register_id')
+    points = request.data.get('points')
+
+    points_error = Response(data={'error': "Points deve ser um inteiro entre 1 e 10"},
+                        status=HTTP_400_BAD_REQUEST)
+    try:
+        points = float(points)
+        if points<1 or points>10:
+            return points_error
+    except ValueError:
+        return points_error
+    try:
+        register_id = int(register_id)
+        register = ClassRegister.objects.get(id=register_id)
+    except (ValueError, ClassRegister.DoesNotExist):
+        return Response(data={'error': "Registro não existe"},
+                        status=HTTP_400_BAD_REQUEST)
+    response, professor = get_profile(jwt_token)
     if response.status_code!=HTTP_200_OK:
         return response
-    try:
-        profile = Profile.objects.get(user=user) 
-    except Profile.DoesNotExist:
-        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
-                        status=HTTP_400_BAD_REQUEST)
-    if not profile.is_professor:
-        return Response(data={'error': "Erro terminal: Usuário nao e um professor"},
-                        status=HTTP_400_BAD_REQUEST)
-    try:
-        professor = Professor.objects.get(profile=profile)
-    except Professor.DoesNotExist:
+    if not professor.profile.is_professor:
         return Response(data={'error': "Erro terminal: Falha ao localizar professor no sistema"},
                         status=HTTP_400_BAD_REQUEST)
 
-    return Response(data={}, status=HTTP_200_OK)
+    if not professor.profile.name in register.discipline_class.professors:
+        return Response(data={'error': "Professor foi não localizado nesta classe"},
+                        status=HTTP_400_BAD_REQUEST)
+    register.indication = points
+    calculate_points(register)
+    register.save()
+    serializer = ClassRegisterSerializer(register)
+    return Response(data=serializer.data, status=HTTP_200_OK)
     
 @api_view(["POST"])
 def calculate_winners(request):
