@@ -24,7 +24,8 @@ import jwt
 from django.test.client import Client
 from profiles.models import Student, Profile, Professor, User
 from datetime import date, datetime
-from profiles.helpers import get_user
+from profiles.helpers import get_user, get_profile
+from disciplines.helpers import get_current_period, get_closest_period
 
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.all()
@@ -241,49 +242,55 @@ def get_class_ranking(request):
     return Response(data=data, status=HTTP_200_OK)
 
 @api_view(["POST"])
-def get_student_rankings(request):
+def get_rankings(request):
     jwt_token = request.data.get('token')
-    response, user = get_user(jwt_token)
+
+    #Getting student/teacher
+    response, student = get_profile(jwt_token)
     if response.status_code!=HTTP_200_OK:
         return response
 
-    final_rank = False
-    time_now = timezone.now().date()
-    try:
-        periods = Period.objects.filter(end_time__gte=time_now)
-        period = periods.get(initial_time__lte=time_now)
-    except Period.DoesNotExist:
-        try:
-            period = Period.objects.order_by('-end_time').get()
-            final_rank = True
-            client = Client()
-            response = client.post('/calculate_winners/', {'date':period.initial_time})
-            if response.status_code!=HTTP_200_OK:
-                return response
-        except Period.DoesNotExist:
-            return Response(data={'error': "Nenhum processo de monitoria encontrado"},
-                            status=HTTP_400_BAD_REQUEST)
+    #Getting period
+    response, period = get_current_period()
+    if response.status_code!=HTTP_200_OK:
+        client = Client()
+        response = client.post('/calculate_winners/', {'date':period.initial_time})
+        if response.status_code!=HTTP_200_OK:
+            return response
+        response, period = get_closest_period()
+        if response.status_code!=HTTP_200_OK:
+            return response
 
-    try:
-        profile = Profile.objects.get(user=user)
-        student = Student.objects.get(profile=profile)
-        registers = ClassRegister.objects.filter(student=student)
-    except (Student.DoesNotExist, User.DoesNotExist, Profile.DoesNotExist):
-        return Response(data={'error': "Erro terminal: Falha ao localizar perfil"},
-                        status=HTTP_400_BAD_REQUEST)
-
-    classes = Class.objects.filter(period=period)
-    registers = ClassRegister.objects.filter(discipline_class__in=classes, student=student)
+    
     data = []
-    for register in registers:
-        ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('points')
-        ranking = ClassRegisterShortSerializer(ranking, many=True).data
-        discipline = register.discipline_class.discipline 
-        discipline_data = {}
-        discipline_data['discipline'] = discipline.name
-        discipline_data['class'] = register.discipline_class.name
-        discipline_data['ranking'] = ranking
-        data.append(discipline_data)
+    classes = Class.objects.filter(period=period)
+    if student.profile.is_professor:
+        professor = student
+        list_classes = []
+        for each in classes:
+            if professor.profile.name in each.professors and not each in list_classes:
+                list_classes.append(each)
+        for discipline_class in list_classes:
+            ranking = ClassRegister.objects.filter(discipline_class=discipline_class).order_by('points')
+            ranking = ClassRegisterSerializer(ranking, many=True).data
+            discipline = discipline_class.discipline 
+            discipline_data = {}
+            discipline_data['discipline'] = discipline.name
+            discipline_data['class'] = discipline_class.name
+            discipline_data['ranking'] = ranking
+            data.append(discipline_data)
+
+    else:
+        registers = ClassRegister.objects.filter(discipline_class__in=classes, student=student)
+        for register in registers:
+            ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('points')
+            ranking = ClassRegisterSerializer(ranking, many=True).data
+            discipline = register.discipline_class.discipline 
+            discipline_data = {}
+            discipline_data['discipline'] = discipline.name
+            discipline_data['class'] = register.discipline_class.name
+            discipline_data['ranking'] = ranking
+            data.append(discipline_data)
 
     return Response(data=data, status=HTTP_200_OK)
 
