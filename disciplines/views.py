@@ -241,10 +241,10 @@ def get_rankings(request):
     #Getting period
     response, period = get_current_period()
     if response.status_code!=HTTP_200_OK:
-        calculate_period(period)
         response, period = get_closest_period()
         if response.status_code!=HTTP_200_OK:
             return response
+        calculate_period(period)
 
     data = []
     classes = Class.objects.filter(period=period)
