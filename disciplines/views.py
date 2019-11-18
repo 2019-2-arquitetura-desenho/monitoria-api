@@ -334,22 +334,18 @@ def calculate_winners(request):
     except Period.DoesNotExist:
         return Response(data={'error': "Falha ao localizar periodo de monitoria"},
                         status=HTTP_400_BAD_REQUEST)
-    print('period', period)
+    
     classes = Class.objects.filter(period=period)
-    data = ClassRegister.objects.filter(discipline_class__in=classes)
-    print('classes', classes)
     vacancies = {}
     for eatch in classes:
         vacancies[eatch.id] = int(eatch.vacancies*0.1) # Vagas para monitor 10%
-    print('data', data)
     # Estudantes escolhidos
     students = Student.objects.all()
-    print('students', students)
     chose_student = {}
     for eatch in students:
         chose_student[eatch.matricula] = False
 
-    
+    data = ClassRegister.objects.filter(discipline_class__in=classes)
     data = data.order_by('priority', '-points')
     registers = []
     for eatch in data:
@@ -358,19 +354,30 @@ def calculate_winners(request):
     i = 0
     ans = []
     while registers:
-        print('Start over qrst', len(registers))
         if i>=len(registers):
             break
+        # Student ja inscrito em uma monitoria
         register = registers[i]
         student_id = register.student.matricula
-        class_id = register.discipline_class.id
         if chose_student[student_id]:
             print('Student alredy chosen ', student_id)
             register.status = 'Reprovado'
             register.save()
             registers.pop(i)
             i = 0
-        elif vacancies[class_id]:
+            continue
+        
+        # Get student position
+        ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('-points')
+        position = 1
+        for eatch in ranking:
+            if eatch==register:
+                break
+            position+=1
+  
+        # Student está dentro das vagas
+        class_id = register.discipline_class.id
+        if vacancies[class_id]>=position:
             print('Student chosen ', student_id)
             register.status = 'Aprovado'
             register.save()
@@ -379,11 +386,15 @@ def calculate_winners(request):
             chose_student[student_id]=True
             registers.pop(i)
             i = 0
+            continue
         else:
+            # Estudante não está dentro das vagas, mas pode ficar
             i+=1
-    for retister in registers:
+            continue
+
+    # Cadastros não contemplados
+    for register in registers:
         register.status = 'Reprovado'
         register.save()
-    #print('ans', ans)
     serializer = ClassRegisterShortSerializer(ans, many=True)
     return Response(data=serializer.data, status=HTTP_200_OK)
