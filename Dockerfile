@@ -10,4 +10,6 @@ WORKDIR /code
 ADD requirements.txt /code
 RUN pip3 install -r requirements.txt
 ADD . /code
-ENTRYPOINT [ "/bin/sh", "entrypoint.sh" ]
+ENV PYTHONPATH "."
+CMD gunicorn monitoria.wsgi:application --bind 0.0.0.0:$PORT
+# ENTRYPOINT [ "/bin/sh", "entrypoint.sh" ]

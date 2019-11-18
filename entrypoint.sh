@@ -1,5 +1,8 @@
-#!/bin/sh
-# entrypoint.sh
+# #!/bin/sh
+# # entrypoint.sh
 
-python3 /code/wait-for-postgres.py 
-python3 manage.py runserver 0.0.0.0:8000
+# # python /code/wait-for-postgres.py 
+# python manage.py makemigrations
+# python manage.py migrate
+# python manage.py migrate --run-syncdb
+# python manage.py runserver
