@@ -1,15 +1,8 @@
-# monitoria-api
+# Monitoria-API
+
 Repositório destinado a API da aplicação "A Monitoria".
 
 ## Execução
-
-Inicializar serviço do docker:
-
-    make start-docker
-
-Caso não dê certo, use:
-
-    make start-docker2
 
 Inicializar Aplicação:
 
@@ -19,9 +12,11 @@ Para inicializar o bash do container, após subir o container:
 
     make bash
 
-Para rodar as migrations:
+## Configurações de Ambiente
 
-    make bash
-    python3 manage.py makemigrations
-    python3 manage.py migrate
-    python manage.py migrate --run-syncdb
+Para utilizar a API, crie um arquivo .env na raiz do projeto, e dentro:
+
+    DOMAIN=localhost:8000
+    PASSWORD_EMAIL=NeedToBeSetInEnvFile
+    SECRET_KEY=o^gxy879i$y^k+r1lo%*!0(-^er)jnos9qtg$zm%qs&de03n&!
+    HEROKU_URL=http://amonitoria-offers.herokuapp.com
