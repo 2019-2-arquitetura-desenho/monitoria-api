@@ -185,9 +185,10 @@ def calculate_points(class_register):
             if class_register.indication==None:
                 class_register.points = (values[each[1]]*0.6) + (class_register.student.ira*0.4)
             else:
-                class_register.points = (values[each[1]]*0.3) + (class_register.student.ira*0.2)+(class_register.indication*0.5)
+                class_register.points = (values[each[1]]*0.3) + (class_register.student.ira*0.2)+(class_register.indication)
             class_register.save()
-            return 
+            return
+    class_register.save()
     raise RegisterException("Estudante não cadastrado na disciplina")
 
 @api_view(["POST"])
@@ -286,11 +287,13 @@ def indicate_student(request):
     register_id = request.data.get('register_id')
     points = request.data.get('points')
 
-    points_error = Response(data={'error': "Points deve ser um inteiro entre 1 e 10"},
+    points_error = Response(data={'error': "Points deve ser um inteiro entre 1 e 5"},
                         status=HTTP_400_BAD_REQUEST)
+    
+
     try:
         points = float(points)
-        if points<1 or points>10:
+        if points<1 or points>5:
             return points_error
     except ValueError:
         return points_error
@@ -311,7 +314,7 @@ def indicate_student(request):
         return Response(data={'error': "Professor foi não localizado nesta classe"},
                         status=HTTP_400_BAD_REQUEST)
     register.indication = points
-    register.points = register.points/2 + (points*0.5)
+    calculate_points(register)
     register.save()
     serializer = ClassRegisterSerializer(register)
     return Response(data=serializer.data, status=HTTP_200_OK)
