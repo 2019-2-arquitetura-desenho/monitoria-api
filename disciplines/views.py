@@ -241,15 +241,11 @@ def get_rankings(request):
     #Getting period
     response, period = get_current_period()
     if response.status_code!=HTTP_200_OK:
-        client = Client()
-        response = client.post('/calculate_winners/', {'date':period.initial_time})
-        if response.status_code!=HTTP_200_OK:
-            return response
+        calculate_period(period)
         response, period = get_closest_period()
         if response.status_code!=HTTP_200_OK:
             return response
 
-    
     data = []
     classes = Class.objects.filter(period=period)
     if student.profile.is_professor:
@@ -259,7 +255,7 @@ def get_rankings(request):
             if professor.profile.name in each.professors and not each in list_classes:
                 list_classes.append(each)
         for discipline_class in list_classes:
-            ranking = ClassRegister.objects.filter(discipline_class=discipline_class).order_by('points')
+            ranking = ClassRegister.objects.filter(discipline_class=discipline_class).order_by('-points')
             ranking = ClassRegisterSerializer(ranking, many=True).data
             discipline = discipline_class.discipline 
             discipline_data = {}
@@ -271,7 +267,7 @@ def get_rankings(request):
     else:
         registers = ClassRegister.objects.filter(discipline_class__in=classes, student=student)
         for register in registers:
-            ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('points')
+            ranking = ClassRegister.objects.filter(discipline_class=register.discipline_class).order_by('-points')
             ranking = ClassRegisterSerializer(ranking, many=True).data
             discipline = register.discipline_class.discipline 
             discipline_data = {}
@@ -317,7 +313,17 @@ def indicate_student(request):
     register.save()
     serializer = ClassRegisterSerializer(register)
     return Response(data=serializer.data, status=HTTP_200_OK)
-    
+
+def calculate_period(period):
+    if period.calculated:
+        return
+    client = Client()
+    response = client.post('/calculate_winners/', {'date':period.initial_time})
+    if response.status_code==HTTP_200_OK:
+        period.calculated = True
+        period.save()
+    return 
+
 @api_view(["POST"])
 def calculate_winners(request):
     # Vagas por disciplina

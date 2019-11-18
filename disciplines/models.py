@@ -12,6 +12,7 @@ class Period(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     initial_time = models.DateField(default=timezone.now().date())
     end_time = models.DateField(default=timezone.now().date()+timedelta(days=30))
+    calculated = models.BooleanField(default=False)
 
 class Meeting(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
