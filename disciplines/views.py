@@ -185,7 +185,7 @@ def calculate_points(class_register):
             if class_register.indication==None:
                 class_register.points = (values[each[1]]*0.6) + (class_register.student.ira*0.4)
             else:
-                class_register.points = (values[each[1]]*0.3) + (class_register.student.ira*0.2)+(class_register.indication)
+                class_register.points = (values[each[1]]*0.3) + (class_register.student.ira*0.2)+(class_register.indication*0.5)
             class_register.save()
             return
     class_register.save()
