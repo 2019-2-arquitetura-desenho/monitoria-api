@@ -10,3 +10,4 @@ whitenoise>=4.1, <5.0
 pdftotext==2.1.2
 wget==3.2
 django-cors-headers>=3.1.1
+django-heroku==0.3.1
