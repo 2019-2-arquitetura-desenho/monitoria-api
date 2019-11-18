@@ -11,6 +11,7 @@ env = environ.Env(
     DOMAIN=(str, "localhost:8000"),
     PASSWORD_EMAIL=(str, "NeedToBeSetInEnvFile"),
     SECRET_KEY=(str, "o^gxy879i$y^k+r1lo%*!0(-^er)jnos9qtg$zm%qs&de03n&!"),
+    FRONT=(str, "localhost:3000"),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 DOMAIN = env('DOMAIN')
@@ -21,11 +22,12 @@ DOMAIN = env('DOMAIN')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 HEROKU_URL = env('HEROKU_URL')
+FRONT = env('FRONT')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['fga-monitoria-api.herokuapp.com']
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,16 +51,13 @@ INSTALLED_APPS = [
 ]
 SITE_ID = 1
 
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_HOST_USER = 'amonitoriafga@gmail.com'
-    EMAIL_HOST_PASSWORD = env('PASSWORD_EMAIL')
-    EMAIL_USE_TLS = True
-    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'monitoriafga1@gmail.com'
+EMAIL_HOST_PASSWORD = env('PASSWORD_EMAIL')
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ''
 
@@ -159,6 +158,7 @@ TEMPLATES = [
             ],
         'libraries':{
             'get_Domain_link': 'monitoria.templatetags.poll_extras',
+            'get_Front_link': 'monitoria.templatetags.poll_extras',
             }
         },
     },
