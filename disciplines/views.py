@@ -261,6 +261,7 @@ def get_rankings(request):
             discipline_data = {}
             discipline_data['discipline'] = discipline.name
             discipline_data['class'] = discipline_class.name
+            discipline_data['vacancies'] = int(discipline_class.vacancies*0.1)
             discipline_data['ranking'] = ranking
             data.append(discipline_data)
 
@@ -273,6 +274,7 @@ def get_rankings(request):
             discipline_data = {}
             discipline_data['discipline'] = discipline.name
             discipline_data['class'] = register.discipline_class.name
+            discipline_data['vacancies'] = int(register.discipline_class.vacancies*0.1)
             discipline_data['ranking'] = ranking
             data.append(discipline_data)
 
