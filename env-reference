@@ -1,0 +1,4 @@
+DOMAIN=localhost:8000
+PASSWORD_EMAIL=NeedToBeSetInEnvFile
+SECRET_KEY=o^gxy879i$y^k+r1lo%*!0(-^er)jnos9qtg$zm%qs&de03n&!
+HEROKU_URL=http://amonitoria-offers.herokuapp.com

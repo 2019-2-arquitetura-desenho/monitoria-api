@@ -2,7 +2,7 @@
 name: Nova funcionalidade
 about: Criação de nova funcionalidade
 title: Funcionalidade
-labels: funcionalidade
+labels: ''
 assignees: ''
 
 ---

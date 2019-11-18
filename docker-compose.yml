@@ -1,0 +1,15 @@
+version: '3'
+services:
+  monitoria-db:
+    image: postgres:11.5-alpine
+  monitoria-api:
+    build: .
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    container_name: monitoria-api
+    links:
+      - monitoria-db
+    depends_on:
+      - monitoria-db
